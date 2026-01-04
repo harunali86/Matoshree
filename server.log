@@ -1,0 +1,197 @@
+Starting project at /home/harun/.gemini/antigravity/scratch/harun-store-v2
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+| expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file.
+λ Bundled 2041ms node_modules/expo-router/node/render.js (2747 modules)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+Web Bundled 3466ms node_modules/expo-router/entry.js (2844 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (2844/2844)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+λ Bundled 117ms node_modules/expo-router/node/render.js (1 module)
+Web Bundled 688ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 1330ms node_modules/expo-router/entry.js (2846 modules)
+ LOG  [web] Logs will appear in the browser console
+λ Bundled 128ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+Web Bundled 715ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 58ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 109ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+Web Bundled 1151ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 176ms node_modules/expo-router/entry.js (1 module)
+λ Bundled 276ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+Web Bundled 1153ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+λ Bundled 80ms node_modules/expo-router/node/render.js (1 module)
+Web Bundled 624ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 68ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+λ Bundled 84ms node_modules/expo-router/node/render.js (1 module)
+Web Bundled 540ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 118ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+Web Bundled 652ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 70ms node_modules/expo-router/entry.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+λ Bundled 83ms node_modules/expo-router/node/render.js (1 module)
+Web Bundled 555ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 153ms node_modules/expo-router/node/render.js (1 module)
+λ  WARN  [Layout children]: No route named "modal" exists in nested children: [
+  '+not-found',        'checkout',
+  'coupons',           'help',
+  'login',             'notifications',
+  'orders',            'payment-methods',
+  'refer',             'rewards',
+  'search',            'settings',
+  'wishlist',          '(tabs)',
+  'invoice/[orderId]', 'product/[id]',
+  'profile/addresses', 'profile/edit',
+  'return/[orderId]',  'review/[productId]',
+  'settings/language', 'support/chat',
+  'track/[orderId]'
+] 
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents 
+Web Bundled 869ms node_modules/expo-router/entry.js (1 module)
+Web Bundled 63ms node_modules/expo-router/entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+| expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file.
+| expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file.
+| expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file.
+| expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file.
