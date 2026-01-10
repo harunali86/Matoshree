@@ -1,118 +1,136 @@
-import { View, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '../components/Themed';
-import { ArrowLeft, Package, ChevronRight, Truck, FileText, RefreshCw, Star } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Container } from '../components/ui/Container';
+import { Typography } from '../components/ui/Typography';
+import { useRouter } from 'expo-router';
+import { supabase } from '../lib/supabase';
+import { Package, ChevronRight } from 'lucide-react-native';
+import { useAuth } from '../hooks/useAuth';
+
+interface Order {
+    id: string;
+    order_number: string;
+    created_at: string;
+    total: number;
+    status: string;
+    items: any;
+}
 
 export default function OrdersScreen() {
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const { user } = useAuth();
 
-    const orders = [
-        {
-            id: '001',
-            date: 'Jan 3, 2026',
-            status: 'Out for Delivery',
-            statusColor: 'text-blue-600',
-            item: 'Sony WH-1000XM5',
-            price: 349,
-            image: { uri: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=200&q=80' }
-        },
-        {
-            id: '002',
-            date: 'Dec 28, 2025',
-            status: 'Delivered',
-            statusColor: 'text-green-600',
-            item: 'Nike Air Jordan 1',
-            price: 180,
-            image: { uri: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&q=80' }
-        },
-        {
-            id: '003',
-            date: 'Dec 15, 2025',
-            status: 'Delivered',
-            statusColor: 'text-green-600',
-            item: 'Apple Watch S9',
-            price: 399,
-            image: { uri: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=200&q=80' }
-        },
-    ];
+    useEffect(() => {
+        if (user) {
+            fetchOrders();
+        } else {
+            setLoading(false);
+        }
+    }, [user]);
+
+    const fetchOrders = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('user_id', user?.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setOrders(data || []);
+        } catch (error: any) {
+            console.error('Error fetching orders:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'delivered': return 'text-green-600';
+            case 'shipped': return 'text-blue-600';
+            case 'pending': return 'text-yellow-600';
+            default: return 'text-gray-600';
+        }
+    };
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+    };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F1F3F6]" edges={['top']}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View className="px-4 py-3 bg-white flex-row items-center shadow-sm z-10">
-                <TouchableOpacity onPress={() => router.back()} className="mr-4">
-                    <ArrowLeft size={24} color="black" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-black">My Orders</Text>
-            </View>
+        <Container safeArea className="bg-white">
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View className="px-6 py-6 border-b border-gray-100">
+                    <Typography variant="h1" className="text-3xl font-black uppercase tracking-tighter mb-2">
+                        My Orders
+                    </Typography>
+                    <Typography variant="caption" color="muted">
+                        {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+                    </Typography>
+                </View>
 
-            <ScrollView className="flex-1 px-2 pt-2">
-                {orders.map((order) => (
-                    <View key={order.id} className="bg-white mb-3 rounded-lg shadow-sm overflow-hidden">
-                        {/* Order Header */}
-                        <View className="flex-row items-center px-4 py-2 bg-gray-50 border-b border-gray-100">
-                            <Text className="text-gray-500 text-xs flex-1">Order #{order.id}</Text>
-                            <Text className="text-gray-500 text-xs">{order.date}</Text>
-                        </View>
-
-                        {/* Order Content */}
-                        <View className="p-4 flex-row">
-                            <Image
-                                source={order.image}
-                                className="w-20 h-20 rounded-lg bg-gray-100"
-                                style={{ width: 80, height: 80 }}
-                                resizeMode="cover"
-                            />
-                            <View className="ml-4 flex-1">
-                                <Text className={`font-bold text-sm mb-1 ${order.statusColor}`}>{order.status}</Text>
-                                <Text className="text-gray-900 text-sm mb-1">{order.item}</Text>
-                                <Text className="text-black font-bold">${order.price}</Text>
-                            </View>
-                        </View>
-
-                        {/* Action Buttons */}
-                        <View className="flex-row border-t border-gray-100">
-                            <TouchableOpacity
-                                onPress={() => router.push(`/track/${order.id}`)}
-                                className="flex-1 flex-row items-center justify-center py-3 border-r border-gray-100"
-                            >
-                                <Truck size={16} color="#2874F0" />
-                                <Text className="text-[#2874F0] font-bold text-xs ml-1">Track</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => router.push(`/invoice/${order.id}`)}
-                                className="flex-1 flex-row items-center justify-center py-3 border-r border-gray-100"
-                            >
-                                <FileText size={16} color="#2874F0" />
-                                <Text className="text-[#2874F0] font-bold text-xs ml-1">Invoice</Text>
-                            </TouchableOpacity>
-                            {order.status === 'Delivered' ? (
-                                <>
-                                    <TouchableOpacity
-                                        onPress={() => router.push(`/review/1`)}
-                                        className="flex-1 flex-row items-center justify-center py-3 border-r border-gray-100"
-                                    >
-                                        <Star size={16} color="#FB641B" />
-                                        <Text className="text-[#FB641B] font-bold text-xs ml-1">Review</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() => router.push(`/return/${order.id}`)}
-                                        className="flex-1 flex-row items-center justify-center py-3"
-                                    >
-                                        <RefreshCw size={16} color="#666" />
-                                        <Text className="text-gray-600 font-bold text-xs ml-1">Return</Text>
-                                    </TouchableOpacity>
-                                </>
-                            ) : (
-                                <TouchableOpacity className="flex-1 flex-row items-center justify-center py-3">
-                                    <Text className="text-gray-400 font-bold text-xs">Cancel</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                {/* Loading State */}
+                {loading ? (
+                    <View className="h-64 items-center justify-center">
+                        <ActivityIndicator size="large" color="#000" />
                     </View>
-                ))}
+                ) : orders.length === 0 ? (
+                    <View className="flex-1 items-center justify-center py-20">
+                        <Package size={64} color="#E5E7EB" strokeWidth={1} />
+                        <Typography variant="h3" className="mt-6 mb-2">No orders yet</Typography>
+                        <Typography variant="body" color="muted" className="text-center mb-6 px-8">
+                            Start shopping to see your orders here
+                        </Typography>
+                    </View>
+                ) : (
+                    <View className="px-6 py-4">
+                        {orders.map((order) => (
+                            <TouchableOpacity
+                                key={order.id}
+                                onPress={() => router.push(`/order/${order.id}`)}
+                                className="mb-4 p-4 border border-gray-200 rounded-lg"
+                                activeOpacity={0.7}
+                            >
+                                <View className="flex-row justify-between items-start mb-3">
+                                    <View className="flex-1">
+                                        <Typography variant="body" className="font-bold mb-1">
+                                            Order #{order.id.slice(0, 8).toUpperCase()}
+                                        </Typography>
+                                        <Typography variant="caption" color="muted">
+                                            {formatDate(order.created_at)}
+                                        </Typography>
+                                    </View>
+                                    <ChevronRight size={20} color="#9CA3AF" />
+                                </View>
+
+                                <View className="flex-row justify-between items-center mb-3">
+                                    <Typography variant="caption" className={`font-bold uppercase ${getStatusColor(order.status)}`}>
+                                        {order.status}
+                                    </Typography>
+                                    <Typography variant="body" className="font-bold">
+                                        ₹{order.total?.toLocaleString() || '0'}
+                                    </Typography>
+                                </View>
+
+                                <View className="border-t border-gray-100 pt-3">
+                                    <Typography variant="caption" color="muted">
+                                        {Array.isArray(order.items) ? order.items.length : 0} items
+                                    </Typography>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
             </ScrollView>
-        </SafeAreaView>
+        </Container>
     );
 }

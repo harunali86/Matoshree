@@ -1,99 +1,200 @@
-import { View, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '../components/Themed';
+import React, { useState } from 'react';
+import { View, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Container } from '../components/ui/Container';
+import { Typography } from '../components/ui/Typography';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 import { useCartStore } from '../store/cartStore';
-import { ArrowLeft, CheckCircle, CreditCard, Home as HomeIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { CouponInput } from '../components/checkout/CouponInput';
 
 export default function CheckoutScreen() {
     const router = useRouter();
-    const { items, getTotal, clearCart } = useCartStore();
-    const total = getTotal();
-    const [success, setSuccess] = useState(false);
+    const { total, items, clearCart, discount, couponCode } = useCartStore();
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handlePayment = () => {
-        setSuccess(true);
-        setTimeout(() => {
+    const [address, setAddress] = useState({
+        fullName: '',
+        street: '',
+        city: '',
+        zip: '',
+        phone: ''
+    });
+
+    const handlePayment = async () => {
+        if (!address.fullName || !address.street || !address.zip) {
+            Alert.alert('Missing Info', 'Please fill in address details.');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            // Use total from store which includes discount
+            const finalAmount = total;
+
+            // 2. Insert into 'orders' table
+            const { data: orderData, error: orderError } = await supabase
+                .from('orders')
+                .insert([{
+                    user_id: '00000000-0000-0000-0000-000000000000', // Guest (should be dynamic)
+                    tenant_id: '44bec768-506e-4477-bbe0-1394d073382e', // Hardcoded for now
+                    total_amount: finalAmount,
+                    status: 'pending',
+                    shipping_address: address,
+                    metadata: {
+                        type: 'guest_checkout',
+                        coupon_code: couponCode,
+                        discount_amount: discount
+                    }
+                }])
+                .select()
+                .single();
+
+            if (orderError) throw orderError;
+
+            // 3. Insert 'order_items'
+            const orderItems = items.map(item => ({
+                order_id: orderData.id,
+                product_id: item.id,
+                product_name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                size: item.size,
+                image: item.image
+            }));
+
+            const { error: itemsError } = await supabase
+                .from('order_items')
+                .insert(orderItems);
+
+            if (itemsError) throw itemsError;
+
+            // Success
             clearCart();
-            router.replace('/(tabs)/');
-        }, 2000);
+            Alert.alert('Order Placed!', `Your order ID is #${orderData.id.slice(0, 8).toUpperCase()}`, [
+                { text: 'OK', onPress: () => router.replace('/') }
+            ]);
+
+        } catch (error: any) {
+            console.error('Checkout Error:', error);
+            Alert.alert('Error', error.message || 'Something went wrong processing your order.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    if (success) {
-        return (
-            <View className="flex-1 bg-[#2874F0] items-center justify-center">
-                <Stack.Screen options={{ headerShown: false }} />
-                <CheckCircle size={80} color="white" />
-                <Text className="text-white text-2xl font-bold mt-4">Order Placed!</Text>
-                <Text className="text-white/80 mt-2">Redirecting to home...</Text>
-            </View>
-        );
-    }
-
     return (
-        <SafeAreaView className="flex-1 bg-[#F1F3F6]" edges={['top']}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View className="px-4 py-3 bg-white flex-row items-center shadow-sm z-10">
-                <TouchableOpacity onPress={() => router.back()} className="mr-4">
-                    <ArrowLeft size={24} color="black" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-black">Order Summary</Text>
+        <Container safeArea className="bg-white">
+            {/* Header */}
+            <View className="px-6 py-4 border-b border-gray-100 flex-row items-center">
+                <Typography variant="h3">Checkout</Typography>
             </View>
 
-            <ScrollView className="flex-1">
-                {/* Address Step */}
-                <View className="bg-white p-4 mb-2">
-                    <View className="flex-row items-center mb-3">
-                        <View className="w-6 h-6 rounded-full bg-[#2874F0] items-center justify-center mr-2"><Text className="text-white text-xs font-bold">1</Text></View>
-                        <Text className="text-black font-bold">Deliver to:</Text>
-                    </View>
-                    <Text className="text-black font-bold ml-8">Harun User</Text>
-                    <Text className="text-gray-600 text-sm ml-8">123, Main Street, Tech Park, Bangalore - 560001</Text>
-                    <TouchableOpacity className="ml-8 mt-2 bg-gray-100 self-start px-4 py-1 rounded-sm border border-gray-200">
-                        <Text className="text-[#2874F0] text-sm font-bold">Change</Text>
-                    </TouchableOpacity>
-                </View>
+            <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
 
-                {/* Items Step */}
-                <View className="bg-white p-4 mb-2">
-                    <View className="flex-row items-center mb-3">
-                        <View className="w-6 h-6 rounded-full bg-[#2874F0] items-center justify-center mr-2"><Text className="text-white text-xs font-bold">2</Text></View>
-                        <Text className="text-black font-bold">Order Items ({items.length})</Text>
+                {/* Coupon Input */}
+                <CouponInput />
+
+                {/* Order Summary */}
+                <View className="mb-8 p-4 bg-gray-50 rounded-lg">
+                    <Typography variant="h3" className="mb-2">Order Summary</Typography>
+                    <View className="flex-row justify-between mb-1">
+                        <Typography variant="body" color="muted">Subtotal</Typography>
+                        <Typography variant="body" className="font-medium">
+                            ₹{items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}
+                        </Typography>
                     </View>
-                    {items.map(item => (
-                        <View key={item.id} className="ml-8 mb-2 flex-row justify-between">
-                            <Text className="text-gray-800 flex-1">{item.name} <Text className="text-gray-400">x{item.quantity}</Text></Text>
-                            <Text className="text-black font-bold">${item.price * item.quantity}</Text>
+                    <View className="flex-row justify-between mb-1">
+                        <Typography variant="body" color="muted">Shipping</Typography>
+                        <Typography variant="body" className="font-medium">Free</Typography>
+                    </View>
+
+                    {discount > 0 && (
+                        <View className="flex-row justify-between mb-1">
+                            <Typography variant="body" className="text-green-600">Discount</Typography>
+                            <Typography variant="body" className="font-medium text-green-600">
+                                -₹{discount.toLocaleString()}
+                            </Typography>
                         </View>
-                    ))}
+                    )}
+
+                    <View className="flex-row justify-between mt-2 pt-2 border-t border-gray-200">
+                        <Typography variant="h3">Total</Typography>
+                        <Typography variant="h3">₹{total.toLocaleString()}</Typography>
+                    </View>
                 </View>
 
-                {/* Price Details */}
-                <View className="bg-white p-4 mb-20">
-                    <Text className="text-gray-500 font-bold uppercase text-xs mb-4">Price Details</Text>
-                    <View className="flex-row justify-between mb-2">
-                        <Text className="text-gray-800">Price ({items.length} items)</Text>
-                        <Text className="text-black">${total}</Text>
+                {/* Shipping Address */}
+                <Typography variant="h3" className="mb-4">Shipping Address</Typography>
+                <Input
+                    label="Full Name"
+                    placeholder="Enter your full name"
+                    className="mb-4"
+                    value={address.fullName}
+                    onChangeText={(t) => setAddress({ ...address, fullName: t })}
+                />
+                <Input
+                    label="Address"
+                    placeholder="Street address"
+                    className="mb-4"
+                    value={address.street}
+                    onChangeText={(t) => setAddress({ ...address, street: t })}
+                />
+                <View className="flex-row gap-4 mb-4">
+                    <View className="flex-1">
+                        <Input
+                            label="City"
+                            placeholder="City"
+                            value={address.city}
+                            onChangeText={(t) => setAddress({ ...address, city: t })}
+                        />
                     </View>
-                    <View className="flex-row justify-between mb-2">
-                        <Text className="text-gray-800">Delivery Charges</Text>
-                        <Text className="text-green-700">FREE</Text>
-                    </View>
-                    <View className="flex-row justify-between mb-4 border-t border-gray-100 pt-4">
-                        <Text className="text-black font-bold text-lg">Total Amount</Text>
-                        <Text className="text-black font-bold text-lg">${total}</Text>
+                    <View className="flex-1">
+                        <Input
+                            label="ZIP Code"
+                            placeholder="000000"
+                            keyboardType="numeric"
+                            value={address.zip}
+                            onChangeText={(t) => setAddress({ ...address, zip: t })}
+                        />
                     </View>
                 </View>
+                <Input
+                    label="Phone Number"
+                    placeholder="+91 99999 99999"
+                    keyboardType="phone-pad"
+                    className="mb-8"
+                    value={address.phone}
+                    onChangeText={(t) => setAddress({ ...address, phone: t })}
+                />
+
+                {/* Payment */}
+                <Typography variant="h3" className="mb-4">Payment Method</Typography>
+                <View className="flex-row gap-4 mb-8">
+                    <View className="flex-1 h-16 border-2 border-black rounded-lg items-center justify-center bg-gray-50">
+                        <Typography variant="body" className="font-bold">Card</Typography>
+                    </View>
+                    <View className="flex-1 h-16 border border-gray-200 rounded-lg items-center justify-center">
+                        <Typography variant="body" color="muted">UPI</Typography>
+                    </View>
+                    <View className="flex-1 h-16 border border-gray-200 rounded-lg items-center justify-center">
+                        <Typography variant="body" color="muted">COD</Typography>
+                    </View>
+                </View>
+
             </ScrollView>
 
             {/* Footer */}
-            <View className="absolute bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex-row items-center px-4 justify-between">
-                <Text className="text-black font-bold text-xl">${total}</Text>
-                <TouchableOpacity onPress={handlePayment} className="bg-[#FB641B] px-8 py-3 rounded-sm">
-                    <Text className="text-white font-bold text-base uppercase">Place Order</Text>
-                </TouchableOpacity>
+            <View className="p-6 border-t border-gray-100">
+                <Button
+                    title={isLoading ? "Processing..." : `Pay ₹${total.toLocaleString()}`}
+                    onPress={handlePayment}
+                    disabled={isLoading}
+                    size="lg"
+                />
             </View>
-        </SafeAreaView>
+        </Container>
     );
 }

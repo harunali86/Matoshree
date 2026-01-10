@@ -1,67 +1,101 @@
-import { View, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '../components/Themed';
+import React from 'react';
+import { ScrollView, View, TouchableOpacity, Image } from 'react-native';
+import { Container } from '../components/ui/Container';
+import { Typography } from '../components/ui/Typography';
+import { Button } from '../components/ui/Button';
 import { useWishlistStore } from '../store/wishlistStore';
+import { useRouter } from 'expo-router';
+import { Heart, ShoppingBag } from 'lucide-react-native';
 import { useCartStore } from '../store/cartStore';
-import { ArrowLeft, Trash2, ShoppingBag } from 'lucide-react-native';
 
 export default function WishlistScreen() {
+    const { items, toggleItem } = useWishlistStore();
+    const addToCart = useCartStore(state => state.addItem);
     const router = useRouter();
-    const { items, toggleWishlist } = useWishlistStore();
-    const addItem = useCartStore((state) => state.addItem);
+
+    const handleAddToCart = (item: typeof items[0]) => {
+        addToCart({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            size: 'UK 8', // Default size
+            color: 'Default',
+        });
+        router.push('/(tabs)/cart');
+    };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F1F3F6]" edges={['top']}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View className="px-4 py-3 bg-white flex-row items-center shadow-sm z-10">
-                <TouchableOpacity onPress={() => router.back()} className="mr-4">
-                    <ArrowLeft size={24} color="black" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-black">My Wishlist ({items.length})</Text>
-            </View>
+        <Container safeArea className="bg-white">
+            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View className="px-6 py-6 border-b border-gray-100">
+                    <Typography variant="h1" className="text-3xl font-black uppercase tracking-tighter mb-2">
+                        Wishlist
+                    </Typography>
+                    <Typography variant="caption" color="muted">
+                        {items.length} {items.length === 1 ? 'item' : 'items'} saved
+                    </Typography>
+                </View>
 
-            <ScrollView className="flex-1 px-2 pt-2">
+                {/* Empty State */}
                 {items.length === 0 ? (
-                    <View className="items-center justify-center mt-32">
-                        <Text className="text-gray-400 text-lg">Your wishlist is empty</Text>
+                    <View className="flex-1 items-center justify-center py-20">
+                        <Heart size={64} color="#E5E7EB" strokeWidth={1} />
+                        <Typography variant="h3" className="mt-6 mb-2">Your wishlist is empty</Typography>
+                        <Typography variant="body" color="muted" className="text-center mb-6 px-8">
+                            Start adding items you love by tapping the heart icon
+                        </Typography>
+                        <Button title="Continue Shopping" onPress={() => router.push('/(tabs)/shop')} />
                     </View>
-                ) : items.map((product) => (
-                    <View key={product.id} className="bg-white mb-2 p-3 flex-row rounded-lg shadow-sm border border-gray-100">
-                        <View className="w-24 h-24 bg-gray-50 items-center justify-center rounded-md">
-                            <Image source={product.image} className="w-20 h-20" resizeMode="contain" />
-                        </View>
-                        <View className="flex-1 ml-3 justify-between py-1">
-                            <View>
-                                <Text className="text-gray-900 font-medium text-sm" numberOfLines={2}>{product.name}</Text>
-                                <View className="flex-row items-center mt-1">
-                                    <Text className="text-black font-bold text-base mr-2">${product.price}</Text>
-                                    <Text className="text-gray-400 text-xs line-through">${product.originalPrice || product.price + 50}</Text>
-                                    <Text className="text-green-700 text-xs font-bold ml-2">20% off</Text>
+                ) : (
+                    <View className="px-6 py-4">
+                        {items.map((item) => (
+                            <View key={item.id} className="flex-row mb-6 pb-6 border-b border-gray-100">
+                                {/* Image */}
+                                <TouchableOpacity onPress={() => router.push(`/product/${item.id}`)}>
+                                    <View className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden mr-4">
+                                        <Image
+                                            source={{ uri: item.image }}
+                                            className="w-full h-full"
+                                            resizeMode="cover"
+                                        />
+                                    </View>
+                                </TouchableOpacity>
+
+                                {/* Details */}
+                                <View className="flex-1 justify-between">
+                                    <View>
+                                        <Typography variant="body" className="font-bold mb-1">{item.name}</Typography>
+                                        <Typography variant="caption" color="muted" className="mb-2">{item.category}</Typography>
+                                        <Typography variant="body" className="font-bold">₹{item.price.toLocaleString()}</Typography>
+                                    </View>
+
+                                    {/* Actions */}
+                                    <View className="flex-row gap-2 mt-2">
+                                        <TouchableOpacity
+                                            onPress={() => handleAddToCart(item)}
+                                            className="flex-row items-center bg-black px-4 py-2 rounded-lg flex-1"
+                                        >
+                                            <ShoppingBag size={14} color="white" />
+                                            <Typography variant="caption" className="text-white ml-2 font-bold text-xs">
+                                                Add to Cart
+                                            </Typography>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            onPress={() => toggleItem(item)}
+                                            className="border border-gray-300 px-4 py-2 rounded-lg"
+                                        >
+                                            <Heart size={14} color="black" fill="black" />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </View>
-
-                            <View className="flex-row gap-3 mt-2">
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        addItem(product);
-                                        toggleWishlist(product); // Remove from wishlist after adding
-                                    }}
-                                    className="flex-1 border border-[#2874F0] py-2 rounded-sm items-center justify-center"
-                                >
-                                    <Text className="text-[#2874F0] text-xs font-bold uppercase">Move to Cart</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={() => toggleWishlist(product)}
-                                    className="w-10 items-center justify-center"
-                                >
-                                    <Trash2 size={20} color="#999" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        ))}
                     </View>
-                ))}
+                )}
             </ScrollView>
-        </SafeAreaView>
+        </Container>
     );
 }

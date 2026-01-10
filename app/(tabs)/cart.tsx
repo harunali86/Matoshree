@@ -1,107 +1,100 @@
-import { View, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import { View, FlatList, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Text } from '../../components/Themed';
+import { Container } from '../../components/ui/Container';
+import { Typography } from '../../components/ui/Typography';
+import { Button } from '../../components/ui/Button';
 import { useCartStore } from '../../store/cartStore';
-import { Minus, Plus } from 'lucide-react-native';
+import { Trash2, Plus, Minus } from 'lucide-react-native';
 
 export default function CartScreen() {
     const router = useRouter();
-    const { items, removeItem, updateQuantity, getTotal } = useCartStore();
-    const total = getTotal();
+    const { items, total, removeItem, updateQuantity } = useCartStore();
+
+    if (items.length === 0) {
+        return (
+            <Container className="justify-center items-center px-6">
+                <Typography variant="h2" className="mb-2">Your Bag is Empty</Typography>
+                <Typography variant="body" color="muted" className="text-center mb-8">
+                    Looks like you haven't added anything yet.
+                </Typography>
+                <Button
+                    title="Start Shopping"
+                    onPress={() => router.push('/')}
+                    className="w-full"
+                />
+            </Container>
+        );
+    }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#F1F3F6]" edges={['top']}>
-            <View className="px-4 py-3 bg-white shadow-sm mb-2">
-                <Text className="text-xl font-bold text-black">My Cart ({items.length})</Text>
+        <Container safeArea className="bg-white">
+            <View className="px-6 py-4 border-b border-gray-100">
+                <Typography variant="h1">BAG ({items.length})</Typography>
             </View>
 
-            <ScrollView className="flex-1 px-2">
-                {items.length === 0 ? (
-                    <View className="items-center justify-center mt-20 bg-white p-10 rounded-lg mx-4">
-                        <Image
-                            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/11329/11329060.png' }}
-                            className="w-32 h-32 mb-4 opacity-50"
-                        />
-                        <Text className="text-gray-800 text-lg font-bold mb-1">Your cart is empty</Text>
-                        <Text className="text-gray-500 text-sm text-center">Add items to it now!</Text>
-                        <TouchableOpacity
-                            onPress={() => router.push('/(tabs)/')}
-                            className="mt-6 bg-[#2874F0] px-8 py-2 rounded-sm"
-                        >
-                            <Text className="text-white font-bold">Shop Now</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <View>
-                        {items.map((item) => (
-                            <View key={item.id} className="bg-white mb-2 p-3 flex-row shadow-sm">
-                                <View className="w-20 h-20 items-center justify-center">
-                                    <Image source={item.image} style={{ width: 64, height: 64 }} resizeMode="contain" />
+            <FlatList
+                data={items}
+                keyExtractor={(item) => `${item.id}-${item.size}`}
+                contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item }) => (
+                    <View className="flex-row mb-8">
+                        {/* Image */}
+                        <View className="w-24 h-32 bg-gray-100 rounded-sm overflow-hidden mr-4">
+                            <Image
+                                source={{ uri: item.image }}
+                                className="w-full h-full"
+                                resizeMode="cover"
+                            />
+                        </View>
+
+                        {/* Details */}
+                        <View className="flex-1 justify-between py-1">
+                            <View>
+                                <View className="flex-row justify-between items-start">
+                                    <Typography variant="h3" className="mb-1 leading-tight flex-1 mr-2">{item.name}</Typography>
+                                    <TouchableOpacity onPress={() => removeItem(item.id, item.size)}>
+                                        <Trash2 size={20} color="#999" />
+                                    </TouchableOpacity>
                                 </View>
-
-                                <View className="flex-1 ml-3">
-                                    <Text className="text-black font-medium text-sm" numberOfLines={1}>{item.name}</Text>
-                                    <Text className="text-gray-500 text-xs mt-1">{item.category}</Text>
-
-                                    <View className="flex-row items-center mt-2 space-x-4">
-                                        <Text className="text-black font-bold text-lg">${item.price * item.quantity}</Text>
-                                        <Text className="text-green-700 text-xs font-bold">2 Offers Applied</Text>
-                                    </View>
-
-                                    <View className="flex-row items-center mt-3">
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                if (item.quantity > 1) updateQuantity(item.id, item.quantity - 1);
-                                                else removeItem(item.id);
-                                            }}
-                                            className="w-7 h-7 rounded-full border border-gray-300 items-center justify-center"
-                                        >
-                                            <Minus size={12} color="black" />
-                                        </TouchableOpacity>
-                                        <View className="border border-gray-200 px-3 py-1 mx-2 bg-gray-50">
-                                            <Text className="text-black font-bold">{item.quantity}</Text>
-                                        </View>
-                                        <TouchableOpacity
-                                            onPress={() => updateQuantity(item.id, item.quantity + 1)}
-                                            className="w-7 h-7 rounded-full border border-gray-300 items-center justify-center"
-                                        >
-                                            <Plus size={12} color="black" />
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity onPress={() => removeItem(item.id)} className="ml-auto">
-                                            <Text className="text-black font-bold text-xs uppercase">Remove</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
+                                <Typography variant="caption" color="muted" className="mb-1">Size: {item.size}</Typography>
+                                <Typography variant="body" className="font-semibold">₹{item.price.toLocaleString()}</Typography>
                             </View>
-                        ))}
+
+                            {/* Quantity */}
+                            <View className="flex-row items-center mt-2">
+                                <TouchableOpacity
+                                    onPress={() => updateQuantity(item.id, item.size, item.quantity - 1)}
+                                    className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center"
+                                >
+                                    <Minus size={14} color="black" />
+                                </TouchableOpacity>
+                                <Typography variant="body" className="mx-4 font-medium">{item.quantity}</Typography>
+                                <TouchableOpacity
+                                    onPress={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                                    className="w-8 h-8 rounded-full border border-gray-200 items-center justify-center"
+                                >
+                                    <Plus size={14} color="black" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
                 )}
-            </ScrollView>
+            />
 
-            {items.length > 0 && (
-                <View className="bg-white border-t border-gray-200 p-4 shadow-top">
-                    <View className="flex-row justify-between mb-2">
-                        <Text className="text-gray-500">Price ({items.length} items)</Text>
-                        <Text className="text-black font-bold">${total}</Text>
-                    </View>
-                    <View className="flex-row justify-between mb-4 border-b border-gray-100 pb-4">
-                        <Text className="text-gray-500">Delivery Charges</Text>
-                        <Text className="text-green-700 font-bold">FREE</Text>
-                    </View>
-
-                    <View className="flex-row justify-between items-center">
-                        <Text className="text-black text-xl font-bold">${total}</Text>
-                        <TouchableOpacity
-                            onPress={() => router.push('/checkout')}
-                            className="bg-[#FB641B] px-8 py-3 rounded-sm shadow-sm"
-                        >
-                            <Text className="text-white font-bold text-base uppercase">Place Order</Text>
-                        </TouchableOpacity>
-                    </View>
+            {/* Footer */}
+            <View className="absolute bottom-0 left-0 right-0 bg-white p-6 border-t border-gray-100 safe-bottom">
+                <View className="flex-row justify-between items-center mb-4">
+                    <Typography variant="body" color="muted">Total</Typography>
+                    <Typography variant="h2">₹{total.toLocaleString()}</Typography>
                 </View>
-            )}
-        </SafeAreaView>
+                <Button
+                    title="Checkout"
+                    size="lg"
+                    onPress={() => router.push('/checkout')}
+                />
+            </View>
+        </Container>
     );
 }

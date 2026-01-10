@@ -1,71 +1,93 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Grid, User, ShoppingCart } from 'lucide-react-native';
-import { View, Text } from 'react-native';
-import { useCartStore } from '../../store/cartStore';
-import { Colors } from '../../constants/Colors';
+import { Home, Search, ShoppingBag, User, Flame } from 'lucide-react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 
 export default function TabLayout() {
-  const cartItems = useCartStore((state) => state.items);
-  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2874F0', // Flipkart Blue
-        tabBarInactiveTintColor: '#878787', // Gray
+        tabBarShowLabel: false, // Hide labels - icons only
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 0,
+          height: Platform.OS === 'web' ? 70 : 80,
+          paddingBottom: Platform.OS === 'web' ? 10 : 20,
+          paddingTop: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 16,
+          elevation: 20,
         },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginTop: 2,
-        },
-      }}>
+        tabBarActiveTintColor: '#000000',
+        tabBarInactiveTintColor: '#B0B0B0',
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="categories"
-        options={{
-          title: 'Categories',
-          tabBarIcon: ({ color }) => <Grid size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="cart"
-        options={{
-          title: 'Cart',
-          tabBarIcon: ({ color }) => (
-            <View className="relative">
-              <ShoppingCart size={24} color={color} />
-              {cartCount > 0 && (
-                <View className="absolute -top-2 -right-2 bg-[#FF6161] w-4 h-4 rounded-full items-center justify-center border border-white">
-                  <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{cartCount}</Text>
-                </View>
-              )}
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.activeContainer]}>
+              <Home size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
             </View>
           ),
         }}
       />
       <Tabs.Screen
-        name="account"
+        name="drops"
         options={{
-          title: 'Account',
-          tabBarIcon: ({ color }) => <User size={24} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.activeContainer]}>
+              <Flame size={24} color={focused ? '#FF6B35' : color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="shop"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.activeContainer]}>
+              <Search size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.activeContainer]}>
+              <ShoppingBag size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.activeContainer]}>
+              <User size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+  },
+  activeContainer: {
+    backgroundColor: '#F5F5F5',
+  },
+});
