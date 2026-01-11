@@ -1,0 +1,240 @@
+import { View, Text, TextInput, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Search as SearchIcon, X } from 'lucide-react-native';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { supabase } from '../../lib/supabase';
+import { Product } from '../../types';
+
+const CATEGORIES = ['All', 'Running', 'Casual', 'Sports', 'Formal', 'Sandals'];
+
+export default function Search() {
+    const router = useRouter();
+    const [query, setQuery] = useState('');
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedCategory, setSelectedCategory] = useState('All');
+
+    // Get Categories from Supabase (Dynamic)
+    const [categories, setCategories] = useState<string[]>(['All']);
+
+    useEffect(() => {
+        // Fetch valid categories
+        const fetchCategories = async () => {
+            const { data } = await supabase.from('categories').select('name').eq('is_active', true);
+            if (data) {
+                // Filter out duplicates and 'All' from DB data
+                const dbCats = data.map(c => c.name).filter(name => name !== 'All');
+                setCategories(['All', ...dbCats]);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const fetchProducts = async (searchQuery?: string, category?: string) => {
+        setLoading(true);
+        try {
+            let q = supabase.from('products').select('*, category:categories(name)');
+
+            // Search Query Filter
+            if (searchQuery && searchQuery.trim().length > 0) {
+                q = q.ilike('name', `%${searchQuery.trim()}%`);
+            }
+
+            // Category Filter
+            if (category && category !== 'All') {
+                // Need to filter by category name, but products table has category_id. 
+                // We join categories table to filter by name.
+                // Or simplified: fetch category ID first. But better:
+                // Supabase inner join filter:
+                // !inner denotes filters on joined table
+                q = q.eq('categories.name', category);
+                // NOTE: Supabase simpler approach: 
+                // Let's rely on client side filter if complex, or distinct ID query.
+                // Assuming we can filter by querying the joined table:
+                const { data: catData } = await supabase.from('categories').select('id').eq('name', category).single();
+                if (catData) {
+                    q = q.eq('category_id', catData.id);
+                }
+            }
+
+            const { data, error } = await q.limit(50);
+
+            if (error) {
+                console.error('Fetch error:', error);
+                setProducts([]);
+            } else {
+                setProducts(data || []);
+            }
+        } catch (e) {
+            console.error(e);
+            setProducts([]);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchProducts(query, selectedCategory);
+    }, [selectedCategory]); // Re-fetch when category changes
+
+    const handleSearch = () => {
+        fetchProducts(query, selectedCategory);
+    };
+
+    const clearSearch = () => {
+        setQuery('');
+        fetchProducts('', selectedCategory);
+    };
+
+    const getProductImage = (product: Product) => {
+        if (product.thumbnail && product.thumbnail.startsWith('http')) return product.thumbnail;
+        if (product.images && product.images.length > 0 && product.images[0].startsWith('http')) return product.images[0];
+
+        // Consistent placeholder
+        const randomId = product.id.charCodeAt(0) % 5;
+        const placeholders = [
+            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
+            'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400',
+            'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=400',
+            'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400',
+            'https://images.unsplash.com/photo-1555274175-75f79b09d5b8?w=400'
+        ];
+        return placeholders[randomId] || placeholders[0];
+    };
+
+    const renderProduct = ({ item }: { item: Product }) => (
+        <TouchableOpacity
+            style={{
+                width: '48%',
+                backgroundColor: 'white',
+                borderRadius: 16,
+                padding: 12,
+                marginBottom: 15,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2
+            }}
+            onPress={() => router.push(`/product/${item.id}`)}
+        >
+            <View style={{
+                aspectRatio: 1,
+                backgroundColor: '#f9f9f9',
+                borderRadius: 12,
+                marginBottom: 12,
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'hidden'
+            }}>
+                <Image
+                    source={{ uri: getProductImage(item) }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                />
+                {item.is_on_sale && (
+                    <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: '#ff3b30', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                        <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>SALE</Text>
+                    </View>
+                )}
+            </View>
+            <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 4, height: 32 }} numberOfLines={2}>{item.name || 'Product'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{(item.sale_price || item.price)?.toLocaleString()}</Text>
+                {item.is_on_sale && item.sale_price && (
+                    <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
+                )}
+            </View>
+        </TouchableOpacity>
+    );
+
+    return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f8f8' }}>
+            {/* Search Bar */}
+            <View style={{ padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderColor: '#f0f0f0' }}>
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: 12,
+                    paddingHorizontal: 15,
+                    height: 50
+                }}>
+                    <SearchIcon size={20} color="#888" />
+                    <TextInput
+                        value={query}
+                        onChangeText={setQuery}
+                        onSubmitEditing={handleSearch}
+                        placeholder="Search for shoes..."
+                        style={{ flex: 1, marginLeft: 10, fontSize: 16, color: '#333' }}
+                        placeholderTextColor="#999"
+                        returnKeyType="search"
+                    />
+                    {query.length > 0 && (
+                        <TouchableOpacity onPress={clearSearch}>
+                            <X size={20} color="#888" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+
+            {/* Categories */}
+            <View style={{ backgroundColor: 'white', paddingVertical: 12 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {categories.map((cat, i) => (
+                        <TouchableOpacity
+                            key={`cat-${i}`}
+                            onPress={() => setSelectedCategory(cat)}
+                            style={{
+                                paddingHorizontal: 20,
+                                paddingVertical: 10,
+                                marginLeft: i === 0 ? 15 : 8,
+                                marginRight: i === categories.length - 1 ? 15 : 0,
+                                backgroundColor: selectedCategory === cat ? 'black' : '#f0f0f0',
+                                borderRadius: 25
+                            }}
+                        >
+                            <Text style={{
+                                color: selectedCategory === cat ? 'white' : '#333',
+                                fontWeight: '600',
+                                fontSize: 13
+                            }}>{cat}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Results */}
+            <View style={{ flex: 1, paddingHorizontal: 15, paddingTop: 15 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>
+                        {loading ? 'Searching...' : `${products.length} Products Found`}
+                    </Text>
+                    {selectedCategory !== 'All' && (
+                        <Text style={{ fontSize: 13, color: '#666' }}>in {selectedCategory}</Text>
+                    )}
+                </View>
+
+                {loading ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color="black" />
+                    </View>
+                ) : products.length === 0 ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ color: '#999', fontSize: 16 }}>No products found</Text>
+                        <Text style={{ color: '#aaa', fontSize: 13, marginTop: 5 }}>Try a different search or category</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={products}
+                        numColumns={2}
+                        keyExtractor={(item) => item.id}
+                        columnWrapperStyle={{ justifyContent: 'space-between' }}
+                        renderItem={renderProduct}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
+            </View>
+        </SafeAreaView>
+    );
+}
