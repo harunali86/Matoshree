@@ -24,6 +24,7 @@ export interface Banner {
     image_url: string;
     title: string;
     subtitle: string;
+    product_id?: string;
 }
 
 export interface Category {
@@ -32,4 +33,20 @@ export interface Category {
     slug: string;
     image_url: string | null;
     parent_id: string | null;
+}
+
+export interface Brand {
+    id: string;
+    name: string;
+    logo_url?: string;
+    logo?: string; // For local static data mainly
+}
+
+export interface Collection {
+    id: string;
+    name: string;
+    image_url?: string;
+    image?: string; // For local static data mainly
+    count?: number;
+    description?: string;
 }

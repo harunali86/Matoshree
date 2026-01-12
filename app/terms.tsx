@@ -1,106 +1,47 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Terms() {
     const router = useRouter();
 
-    const sections = [
-        {
-            title: '1. Acceptance of Terms',
-            content: `By accessing and using the Matoshree Footwear app, you agree to be bound by these Terms & Conditions. If you do not agree, please do not use our services.`
-        },
-        {
-            title: '2. Products & Pricing',
-            content: `• All products are subject to availability
-• Prices are in Indian Rupees (₹) and include GST
-• We reserve the right to modify prices without prior notice
-• Product images are for reference; actual colors may vary slightly
-• We sell only genuine, authentic branded products`
-        },
-        {
-            title: '3. Orders & Payment',
-            content: `• Orders are confirmed only after successful payment
-• We accept COD, UPI, Credit/Debit Cards
-• COD is available for orders below ₹10,000
-• Order cancellation is allowed before shipping
-• Refunds are processed within 5-7 business days`
-        },
-        {
-            title: '4. Shipping & Delivery',
-            content: `• Free delivery on orders above ₹999
-• Standard delivery: 3-7 business days
-• Express delivery available in select areas
-• Delivery timelines may vary due to unforeseen circumstances
-• Risk of loss passes to you upon delivery`
-        },
-        {
-            title: '5. Returns & Refunds',
-            content: `• 7-day return policy from date of delivery
-• Products must be unused with original tags
-• Return shipping is free for defective items
-• Refunds are credited to original payment method
-• Exchange is subject to product availability`
-        },
-        {
-            title: '6. User Account',
-            content: `• You are responsible for maintaining account security
-• Provide accurate and complete information
-• One account per person
-• We reserve the right to suspend accounts for violations
-• Account data is governed by our Privacy Policy`
-        },
-        {
-            title: '7. Intellectual Property',
-            content: `• All content, logos, and designs are property of Matoshree Footwear
-• Brand names and logos belong to their respective owners
-• You may not copy, modify, or distribute our content
-• User-generated content grants us usage rights`
-        },
-        {
-            title: '8. Limitation of Liability',
-            content: `• We are not liable for indirect or consequential damages
-• Maximum liability is limited to the order value
-• We do not guarantee uninterrupted service
-• Force majeure events excuse performance delays`
-        },
-        {
-            title: '9. Governing Law',
-            content: `These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Pune, Maharashtra.`
-        },
-        {
-            title: '10. Contact',
-            content: `For questions about these terms:
-Email: legal@matoshree.com
-Phone: +91 83293 20708`
-        }
-    ];
-
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <Stack.Screen options={{ headerShown: false }} />
-
-            {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#f0f0f0' }}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <ArrowLeft size={24} color="black" />
+            <View style={{ padding: 20, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: '#f0f0f0' }}>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 15 }}>
+                    <ArrowLeft size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', marginLeft: 15 }}>Terms & Conditions</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700' }}>Terms of Service</Text>
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
-                <Text style={{ color: '#666', marginBottom: 20 }}>Last updated: January 2026</Text>
+            <ScrollView contentContainerStyle={{ padding: 25 }}>
+                <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 10 }}>Terms & Conditions</Text>
+                <Text style={{ fontSize: 13, color: '#888', marginBottom: 25 }}>Last Updated: January 12, 2026</Text>
 
-                {sections.map((section, i) => (
-                    <View key={i} style={{ marginBottom: 25 }}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>{section.title}</Text>
-                        <Text style={{ color: '#444', lineHeight: 22 }}>{section.content}</Text>
-                    </View>
-                ))}
+                <Section title="1. Acceptance of Terms" text="By accessing or using our mobile application and services, you agree to be bound by these Terms of Service and all applicable laws and regulations." />
+
+                <Section title="2. Purchases & Payments" text="All purchases are subject to availability. We reserve the right to refuse or cancel any order for any reason. Prices are subject to change without notice." />
+
+                <Section title="3. Returns & Refunds" text="Items can be returned within 7 days of delivery if they are unworn and in original condition. Please refer to our Return Policy for detailed instructions." />
+
+                <Section title="4. User Accounts" text="You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account." />
+
+                <Section title="5. Intellectual Property" text="All content, features, and functionality of the App, including text, graphics, logos, and images, are the exclusive property of Matoshree Footwear." />
+
+                <Section title="6. Contact Us" text="If you have any questions about these Terms, please contact us via the Contact section in the app." />
 
                 <View style={{ height: 50 }} />
             </ScrollView>
         </SafeAreaView>
+    );
+}
+
+function Section({ title, text }: { title: string, text: string }) {
+    return (
+        <View style={{ marginBottom: 25 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 8 }}>{title}</Text>
+            <Text style={{ fontSize: 15, lineHeight: 24, color: '#444' }}>{text}</Text>
+        </View>
     );
 }

@@ -1,96 +1,46 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
-import { ArrowLeft, MapPin, Phone, Mail, Clock } from 'lucide-react-native';
 
 export default function About() {
     const router = useRouter();
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-            <Stack.Screen options={{ headerShown: false }} />
-
-            {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#f0f0f0' }}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <ArrowLeft size={24} color="black" />
+            <View style={{ padding: 20, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: '#f0f0f0' }}>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 15 }}>
+                    <ArrowLeft size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', marginLeft: 15 }}>About Us</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700' }}>About Us</Text>
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
-                {/* Logo & Brand */}
-                <View style={{ alignItems: 'center', marginBottom: 30 }}>
-                    <Text style={{ fontSize: 32, fontWeight: '900', letterSpacing: 3 }}>MATOSHREE</Text>
-                    <Text style={{ color: '#666', marginTop: 5 }}>Premium Footwear Since 2010</Text>
+            <ScrollView contentContainerStyle={{ padding: 25 }}>
+                <View style={{ marginBottom: 30, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 32, fontWeight: '900', letterSpacing: 3, marginBottom: 5 }}>MATOSHREE</Text>
+                    <Text style={{ fontSize: 14, color: '#666', letterSpacing: 2 }}>EST. 1999</Text>
                 </View>
 
-                {/* Story */}
-                <View style={{ marginBottom: 25 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Our Story</Text>
-                    <Text style={{ color: '#444', lineHeight: 24 }}>
-                        Matoshree Footwear started as a small family-owned shop in Pune, Maharashtra.
-                        Over the years, we have grown into a trusted destination for premium quality footwear.
-                        Our commitment to quality, comfort, and style has made us a favorite among customers across India.
-                    </Text>
-                </View>
+                <Image
+                    source={{ uri: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800' }}
+                    style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 30 }}
+                    resizeMode="cover"
+                />
 
-                {/* Mission */}
-                <View style={{ marginBottom: 25 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Our Mission</Text>
-                    <Text style={{ color: '#444', lineHeight: 24 }}>
-                        To provide high-quality, comfortable, and stylish footwear at affordable prices.
-                        We believe everyone deserves to walk in comfort without breaking the bank.
-                    </Text>
-                </View>
+                <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 15 }}>Our Story</Text>
 
-                {/* Why Choose Us */}
-                <View style={{ marginBottom: 25 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Why Choose Us?</Text>
+                <Text style={{ fontSize: 16, lineHeight: 26, color: '#444', marginBottom: 20 }}>
+                    Established in 1999, Matoshree Footwear began as a humble endeavor with a singular vision: to bring world-class quality and timeless design to our local community. Over two decades later, that vision has evolved into a leading footwear destination.
+                </Text>
 
-                    <View style={{ backgroundColor: '#f9f9f9', padding: 15, borderRadius: 12, marginBottom: 10 }}>
-                        <Text style={{ fontWeight: '600', marginBottom: 5 }}>✅ 100% Genuine Products</Text>
-                        <Text style={{ color: '#666', fontSize: 13 }}>All brands are authentic with manufacturer warranty</Text>
-                    </View>
+                <Text style={{ fontSize: 16, lineHeight: 26, color: '#444', marginBottom: 20 }}>
+                    We believe that shoes are more than just an accessory—they are the foundation of your journey. That's why every pair in our collection is curated for comfort, durability, and style.
+                </Text>
 
-                    <View style={{ backgroundColor: '#f9f9f9', padding: 15, borderRadius: 12, marginBottom: 10 }}>
-                        <Text style={{ fontWeight: '600', marginBottom: 5 }}>🚚 Fast Delivery</Text>
-                        <Text style={{ color: '#666', fontSize: 13 }}>Free delivery on orders above ₹999</Text>
-                    </View>
-
-                    <View style={{ backgroundColor: '#f9f9f9', padding: 15, borderRadius: 12, marginBottom: 10 }}>
-                        <Text style={{ fontWeight: '600', marginBottom: 5 }}>↩️ Easy Returns</Text>
-                        <Text style={{ color: '#666', fontSize: 13 }}>7-day hassle-free return policy</Text>
-                    </View>
-
-                    <View style={{ backgroundColor: '#f9f9f9', padding: 15, borderRadius: 12 }}>
-                        <Text style={{ fontWeight: '600', marginBottom: 5 }}>💬 24/7 Support</Text>
-                        <Text style={{ color: '#666', fontSize: 13 }}>Dedicated customer support via WhatsApp</Text>
-                    </View>
-                </View>
-
-                {/* Store Location */}
-                <View style={{ marginBottom: 25 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Visit Our Store</Text>
-                    <View style={{ backgroundColor: '#f0f4ff', padding: 20, borderRadius: 12 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
-                            <MapPin size={20} color="#333" />
-                            <Text style={{ marginLeft: 12, flex: 1, color: '#333' }}>
-                                Shop No. 5, Shivkrupa Society,{'\n'}
-                                Chikhali Road, Talwade,{'\n'}
-                                Pune, Maharashtra - 411062
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                            <Clock size={20} color="#333" />
-                            <Text style={{ marginLeft: 12, color: '#333' }}>Mon - Sun: 10:00 AM - 9:00 PM</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Phone size={20} color="#333" />
-                            <Text style={{ marginLeft: 12, color: '#333' }}>+91 83293 20708</Text>
-                        </View>
-                    </View>
-                </View>
+                <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 15, marginTop: 10 }}>Our Promise</Text>
+                <Text style={{ fontSize: 16, lineHeight: 26, color: '#444', marginBottom: 20 }}>
+                    From authentic leather classics to modern streetwear, we guarantee authenticity and excellence. Thank you for walking this journey with us for over 25 years.
+                </Text>
 
                 <View style={{ height: 50 }} />
             </ScrollView>

@@ -3,13 +3,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Menu, Search, ShoppingBag, Heart, Clock, Zap, TrendingUp, ChevronRight } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
-import { Product, Banner, Category } from '../../types';
+import { Product, Banner, Category, Brand, Collection } from '../../types';
 import { useCartStore } from '../../store/cartStore';
 
 const { width, height } = Dimensions.get('window');
 
-// Real Brand Logos (CDN URLs that work)
-const BRANDS = [
+// Real Brand Logos (CDN URLs that work) - Fallback
+const defaultBrands: Brand[] = [
     { id: '1', name: 'Nike', logo: 'https://cdn.iconscout.com/icon/free/png-256/free-nike-1-202653.png' },
     { id: '2', name: 'Adidas', logo: 'https://cdn.iconscout.com/icon/free/png-256/free-adidas-3-202636.png' },
     { id: '3', name: 'Puma', logo: 'https://cdn.iconscout.com/icon/free/png-256/free-puma-2-202652.png' },
@@ -20,25 +20,22 @@ const BRANDS = [
     { id: '8', name: 'Fila', logo: 'https://cdn.iconscout.com/icon/free/png-256/free-fila-202644.png' },
 ];
 
-// Category Images (Professional shoe photos)
 const CATEGORY_IMAGES: { [key: string]: string } = {
     'men': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&h=200&fit=crop',
     'women': 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=200&h=200&fit=crop',
-    'kids': 'https://images.unsplash.com/photo-1555274175-75f79b09d5b8?w=200&h=200&fit=crop',
+    'kids': 'https://images.unsplash.com/photo-1514986888952-8cd320577b68?w=200&h=200&fit=crop',
     'sandals': 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=200&h=200&fit=crop',
     'sports': 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=200&h=200&fit=crop',
     'sneakers': 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=200&h=200&fit=crop',
     'formal': 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=200&h=200&fit=crop',
 };
 
-// Collections
-const COLLECTIONS = [
+// Collections - Fallback
+const defaultCollections: Collection[] = [
     { id: '1', name: 'Summer Vibes', image: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400', count: 45 },
     { id: '2', name: 'Office Wear', image: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400', count: 32 },
     { id: '3', name: 'Sports Pro', image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400', count: 28 },
 ];
-
-
 
 export default function Home() {
     const router = useRouter();
@@ -47,6 +44,8 @@ export default function Home() {
     const [saleProducts, setSaleProducts] = useState<Product[]>([]);
     const [banners, setBanners] = useState<Banner[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [collections, setCollections] = useState<Collection[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeSlide, setActiveSlide] = useState(0);
 
@@ -54,17 +53,21 @@ export default function Home() {
 
     const fetchData = async () => {
         try {
-            const [productsRes, bannersRes, categoriesRes, saleRes] = await Promise.all([
+            const [productsRes, bannersRes, categoriesRes, saleRes, brandsRes, collectionsRes] = await Promise.all([
                 supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(20),
-                supabase.from('hero_banners').select('*').eq('is_active', true).order('display_order'),
+                supabase.from('hero_slides').select('*').eq('is_active', true).order('display_order'),
                 supabase.from('categories').select('*').eq('is_active', true).order('display_order'),
-                supabase.from('products').select('*').eq('is_on_sale', true).eq('is_active', true).limit(10)
+                supabase.from('products').select('*').eq('is_on_sale', true).eq('is_active', true).limit(10),
+                supabase.from('brands').select('*').order('name'),
+                supabase.from('collections').select('*').eq('is_active', true).order('name')
             ]);
 
             if (productsRes.data) setProducts(productsRes.data);
             if (bannersRes.data) setBanners(bannersRes.data);
             if (categoriesRes.data) setCategories(categoriesRes.data);
             if (saleRes.data) setSaleProducts(saleRes.data);
+            if (brandsRes.data) setBrands(brandsRes.data);
+            if (collectionsRes.data) setCollections(collectionsRes.data);
         } catch (error) {
             console.log('Fetch error:', error);
         } finally {
@@ -74,9 +77,19 @@ export default function Home() {
 
     useEffect(() => { fetchData(); }, []);
 
+    // Helper for Banners
+    const defaultBanners: Banner[] = [
+        { id: '1', title: 'NEW ARRIVALS', subtitle: 'Spring Collection 2026', image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800' },
+        { id: '2', title: 'UPTO 50% OFF', subtitle: 'Limited Time Offer', image_url: 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=800' },
+    ];
+    const displayBanners = banners.length > 0 ? banners : defaultBanners;
+
+    // Helper for Brands & Collections
+    const displayBrands = brands.length > 0 ? brands : defaultBrands;
+    const displayCollections = collections.length > 0 ? collections : defaultCollections;
+
     // Auto-scroll hero
     useEffect(() => {
-        const displayBanners = banners.length > 0 ? banners : defaultBanners;
         if (displayBanners.length <= 1) return;
         const timer = setInterval(() => {
             const nextIndex = (activeSlide + 1) % displayBanners.length;
@@ -84,19 +97,11 @@ export default function Home() {
             setActiveSlide(nextIndex);
         }, 5000);
         return () => clearInterval(timer);
-    }, [activeSlide, banners.length]);
-
-    const defaultBanners: Banner[] = [
-        { id: '1', title: 'NEW ARRIVALS', subtitle: 'Spring Collection 2026', image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800' },
-        { id: '2', title: 'UPTO 50% OFF', subtitle: 'Limited Time Offer', image_url: 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=800' },
-    ];
-
-    const displayBanners = banners.length > 0 ? banners : defaultBanners;
+    }, [activeSlide, displayBanners.length]);
 
     const getProductImage = (product: Product) => {
         if (product.thumbnail && product.thumbnail.startsWith('http')) return product.thumbnail;
         if (product.images && product.images.length > 0 && product.images[0].startsWith('http')) return product.images[0];
-        // Use a consistent hash-based image if no image available, based on product ID to keep it static
         const randomId = product.id.charCodeAt(0) % 5;
         const placeholders = [
             'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
@@ -114,7 +119,7 @@ export default function Home() {
             <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, paddingBottom: 40, backgroundColor: 'rgba(0,0,0,0.4)' }}>
                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, letterSpacing: 3, marginBottom: 8 }}>{item.subtitle || 'PREMIUM FOOTWEAR'}</Text>
                 <Text style={{ color: 'white', fontSize: 34, fontWeight: '900', letterSpacing: -1, marginBottom: 18 }}>{item.title || 'DISCOVER STYLE'}</Text>
-                <TouchableOpacity onPress={() => router.push('/(tabs)/search')} style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 25, alignSelf: 'flex-start' }}>
+                <TouchableOpacity onPress={() => item.product_id ? router.push(`/product/${item.product_id}`) : router.push('/(tabs)/search')} style={{ backgroundColor: 'white', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 25, alignSelf: 'flex-start' }}>
                     <Text style={{ fontWeight: 'bold', fontSize: 13 }}>SHOP NOW</Text>
                 </TouchableOpacity>
             </View>
@@ -147,7 +152,7 @@ export default function Home() {
     const renderCategory = ({ item }: { item: Category }) => {
         const catImage = CATEGORY_IMAGES[item.name.toLowerCase()] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200';
         return (
-            <TouchableOpacity onPress={() => router.push(`/(tabs)/search?category=${item.slug}`)} style={{ alignItems: 'center', marginRight: 16 }}>
+            <TouchableOpacity onPress={() => router.push(`/(tabs)/search?category=${encodeURIComponent(item.name)}`)} style={{ alignItems: 'center', marginRight: 16 }}>
                 <View style={{ width: 70, height: 70, backgroundColor: '#f0f0f0', borderRadius: 35, overflow: 'hidden', marginBottom: 8, borderWidth: 2, borderColor: '#eee' }}>
                     <Image source={{ uri: catImage }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                 </View>
@@ -156,14 +161,20 @@ export default function Home() {
         );
     };
 
-    const renderBrand = ({ item }: { item: typeof BRANDS[0] }) => (
-        <TouchableOpacity style={{ alignItems: 'center', marginRight: 14 }}>
-            <View style={{ width: 70, height: 70, backgroundColor: 'white', borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginBottom: 6, borderWidth: 1.5, borderColor: '#eee', padding: 14 }}>
-                <Image source={{ uri: item.logo }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-            </View>
-            <Text style={{ fontWeight: '600', fontSize: 11, color: '#333' }}>{item.name}</Text>
-        </TouchableOpacity>
-    );
+    const renderBrand = ({ item }: { item: Brand }) => {
+        const logo = item.logo_url || item.logo || 'https://via.placeholder.com/100';
+        return (
+            <TouchableOpacity
+                onPress={() => router.push(`/(tabs)/search?brand=${encodeURIComponent(item.name)}`)}
+                style={{ alignItems: 'center', marginRight: 14 }}
+            >
+                <View style={{ width: 70, height: 70, backgroundColor: 'white', borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginBottom: 6, borderWidth: 1.5, borderColor: '#eee', padding: 14 }}>
+                    <Image source={{ uri: logo }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                </View>
+                <Text style={{ fontWeight: '600', fontSize: 11, color: '#333' }}>{item.name}</Text>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <View style={{ flex: 1, backgroundColor: 'white' }}>
@@ -235,7 +246,7 @@ export default function Home() {
                 <View style={{ paddingVertical: 20 }}>
                     <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Brand</Text>
                     <FlatList
-                        data={BRANDS}
+                        data={displayBrands}
                         renderItem={renderBrand}
                         keyExtractor={(item) => item.id}
                         horizontal
@@ -283,13 +294,13 @@ export default function Home() {
                 <View style={{ paddingVertical: 20 }}>
                     <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Collection</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }}>
-                        {COLLECTIONS.map((col) => (
+                        {displayCollections.map((col) => (
                             <TouchableOpacity key={col.id} style={{ width: 150, marginRight: 12 }}>
                                 <View style={{ width: 150, height: 180, borderRadius: 14, overflow: 'hidden', marginBottom: 8 }}>
-                                    <Image source={{ uri: col.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                    <Image source={{ uri: col.image_url || col.image || 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                                     <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.5)' }}>
                                         <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{col.name}</Text>
-                                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>{col.count} items</Text>
+                                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>{col.count || 0} items</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -319,18 +330,24 @@ export default function Home() {
                 </View>
 
                 {/* Footer */}
-                <View style={{ padding: 25, alignItems: 'center', backgroundColor: '#f8f8f8', marginTop: 20 }}>
-                    <Text style={{ fontSize: 18, fontWeight: '900', letterSpacing: 2, marginBottom: 10 }}>MATOSHREE</Text>
-                    <Text style={{ color: '#999', fontSize: 12, textAlign: 'center', marginBottom: 15 }}>Premium Footwear for Everyone</Text>
-                    <View style={{ flexDirection: 'row', gap: 20 }}>
-                        <TouchableOpacity onPress={() => router.push('/about')}><Text style={{ color: '#666', fontSize: 12 }}>About</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/contact')}><Text style={{ color: '#666', fontSize: 12 }}>Contact</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/privacy')}><Text style={{ color: '#666', fontSize: 12 }}>Privacy</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/terms')}><Text style={{ color: '#666', fontSize: 12 }}>Terms</Text></TouchableOpacity>
+                {/* Footer */}
+                <View style={{ paddingVertical: 35, paddingHorizontal: 20, backgroundColor: '#0a0a0a', marginTop: 20, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 24, fontWeight: '900', letterSpacing: 5, color: 'white', marginBottom: 5 }}>MATOSHREE</Text>
+                    <Text style={{ color: '#666', fontSize: 10, letterSpacing: 2, marginBottom: 25, textTransform: 'uppercase' }}>Est. 1999 • Premium Footwear</Text>
+
+                    <View style={{ width: 40, height: 1, backgroundColor: '#333', marginBottom: 25 }} />
+
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 15, columnGap: 25, marginBottom: 30 }}>
+                        <TouchableOpacity onPress={() => router.push('/about')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>About Us</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/contact')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Contact</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/privacy')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Privacy Policy</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/terms')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Terms used</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/help')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Help Center</Text></TouchableOpacity>
                     </View>
+
+                    <Text style={{ color: '#333', fontSize: 9, letterSpacing: 1 }}>© 2026 MATOSHREE. INC. ALL RIGHTS RESERVED.</Text>
                 </View>
             </ScrollView>
         </View>
     );
 }
-

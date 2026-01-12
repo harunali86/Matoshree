@@ -61,7 +61,7 @@ export default function OrderSuccess() {
                 }}
             >
                 <Package size={20} color="white" />
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 10 }}>TRACK ORDER</Text>
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 10 }}>VIEW ORDER & INVOICE</Text>
             </TouchableOpacity>
 
             {/* Continue Shopping Button */}

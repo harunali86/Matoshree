@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StatusBar, Dimensions, Animated, FlatList, Alert, TextInput, Share } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StatusBar, Dimensions, Animated, FlatList, Alert, TextInput, Share, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -126,8 +126,26 @@ export default function ProductDetails() {
         }
     };
 
-    if (loading || !product) {
-        return <View style={{ flex: 1, backgroundColor: 'white' }} />;
+    if (loading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="black" />
+            </View>
+        );
+    }
+
+    if (!product) {
+        return (
+            <View style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 20 }}>Product Not Found</Text>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    style={{ backgroundColor: 'black', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
+                >
+                    <Text style={{ color: 'white' }}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
     }
 
     const avgRating = product.rating || 4.8;
@@ -151,8 +169,8 @@ export default function ProductDetails() {
                 borderBottomWidth: scrollY.interpolate({ inputRange: [0, 300], outputRange: [0, 1] }),
                 borderBottomColor: '#f0f0f0'
             }}>
-                <TouchableOpacity onPress={() => router.back()} style={{ width: 40, height: 40, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 20, justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(10px)' }}>
-                    <ArrowLeft size={24} color={scrollY.interpolate({ inputRange: [0, 300], outputRange: ['black', 'black'] })} />
+                <TouchableOpacity onPress={() => router.back()} style={{ width: 40, height: 40, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}>
+                    <ArrowLeft size={24} color="black" />
                 </TouchableOpacity>
                 <Animated.Text style={{
                     fontSize: 18, fontWeight: 'bold',

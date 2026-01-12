@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
@@ -100,16 +100,11 @@ export default function Checkout() {
         setCouponDiscount(0);
     };
 
-    useEffect(() => {
-        // TODO: Re-enable auth check after fixing auth system
-        // if (!isAuthenticated) {
-        //     Alert.alert('Login Required', 'Please login to checkout', [
-        //         { text: 'OK', onPress: () => router.replace('/(auth)/login') }
-        //     ]);
-        //     return;
-        // }
-        fetchAddresses();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchAddresses();
+        }, [user?.id])
+    );
 
     const fetchAddresses = async () => {
         try {
@@ -138,30 +133,32 @@ export default function Checkout() {
 
         setLoading(true);
         try {
-            // Create order (use guest ID if not logged in)
-            const { data: order, error } = await supabase.from('orders').insert({
-                user_id: user?.id || 'guest-' + Date.now(),
-                status: 'pending',
-                total_amount: grandTotal,
-                shipping_address: `${selectedAddress.address_line}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`,
-                payment_method: selectedPayment,
-                items: items.map(i => ({
-                    product_id: i.id,
-                    name: i.name,
-                    price: i.price,
-                    size: i.size,
-                    quantity: i.quantity,
-                    image: i.thumbnail
-                }))
-            }).select().single();
+            // Prepare items for RPC
+            const orderItems = items.map(i => ({
+                product_id: i.id,
+                quantity: i.quantity,
+                price: i.price,
+                size: i.size
+            }));
+
+            // Call Transactional Place Order Function
+            // This handles Stock Deduction and Invoice Generation
+            const { data, error } = await supabase.rpc('place_order', {
+                p_user_id: user?.id || null, // Null for Guest
+                p_address_id: selectedAddress.id,
+                p_total_amount: grandTotal,
+                p_items: orderItems,
+                p_payment_method: selectedPayment
+            });
 
             if (error) throw error;
+            if (data && !data.success) throw new Error(data.error || 'Order failed');
 
             // Clear cart
             clearCart();
 
             // Navigate to success
-            router.replace(`/order-success?orderId=${order.id}`);
+            router.replace(`/order-success?orderId=${data.order_id}`);
         } catch (e: any) {
             Alert.alert('Error', e.message || 'Failed to place order');
         } finally {
@@ -350,9 +347,9 @@ export default function Checkout() {
             <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'white', padding: 20, borderTopWidth: 1, borderColor: '#eee' }}>
                 <TouchableOpacity
                     onPress={placeOrder}
-                    disabled={loading || !selectedAddress}
+                    disabled={loading}
                     style={{
-                        backgroundColor: selectedAddress ? 'black' : '#ccc',
+                        backgroundColor: 'black',
                         height: 56,
                         borderRadius: 28,
                         justifyContent: 'center',

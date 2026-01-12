@@ -36,6 +36,8 @@ CREATE POLICY "Anyone can read active coupons" ON coupons FOR SELECT USING (is_a
 CREATE POLICY "Anyone can read reviews" ON reviews FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can insert reviews" ON reviews FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
+
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);

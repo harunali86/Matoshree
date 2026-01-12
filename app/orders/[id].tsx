@@ -24,6 +24,9 @@ export default function OrderDetails() {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
+    const [cancelModalVisible, setCancelModalVisible] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [cancelling, setCancelling] = useState(false);
 
     useEffect(() => {
         fetchOrderDetails();
@@ -56,44 +59,49 @@ export default function OrderDetails() {
         }
     };
 
-    const handleCancelOrder = async () => {
-        Alert.alert(
-            'Cancel Order',
-            'Are you sure you want to cancel this order?',
-            [
-                { text: 'No', style: 'cancel' },
-                {
-                    text: 'Yes, Cancel',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const { error } = await supabase
-                            .from('orders')
-                            .update({ status: 'Cancelled' })
-                            .eq('id', id);
+    const submitCancellation = async () => {
+        if (!cancelReason.trim()) {
+            Alert.alert('Error', 'Please provide a reason for cancellation');
+            return;
+        }
 
-                        if (error) Alert.alert('Error', 'Could not cancel order');
-                        else {
-                            Alert.alert('Order Cancelled', 'Your order has been cancelled successfully.');
-                            fetchOrderDetails();
-                        }
-                    }
-                }
-            ]
-        );
+        setCancelling(true);
+        try {
+            const { data, error } = await supabase.rpc('cancel_order', {
+                p_order_id: id,
+                p_reason: cancelReason
+            });
+
+            if (error) throw error;
+            if (data && !data.success) throw new Error(data.error);
+
+            Alert.alert('Order Cancelled', 'Your order has been cancelled successfully.');
+            setCancelModalVisible(false);
+            fetchOrderDetails();
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Could not cancel order');
+        } finally {
+            setCancelling(false);
+        }
     };
 
     const generateInvoice = async () => {
         setDownloading(true);
         try {
+            // Check formatted address from JSON
+            const addr = order.shipping_address || {};
+
             const htmlContent = `
                 <html>
                 <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
                     <style>
                         body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; }
                         .header { display: flex; justify-content: space-between; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
                         .logo { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
                         .invoice-title { font-size: 32px; font-weight: bold; color: #333; }
-                        .details { margin-bottom: 30px; display: flex; justify-content: space-between; }
+                        .details { margin-bottom: 30px; }
+                        .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
                         .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
                         .table th { text-align: left; padding: 10px; background: #f8f8f8; border-bottom: 1px solid #ddd; }
                         .table td { padding: 10px; border-bottom: 1px solid #eee; }
@@ -108,17 +116,19 @@ export default function OrderDetails() {
                     </div>
                     
                     <div class="details">
-                        <div>
-                            <strong>Billed To:</strong><br>
-                            ${order.shipping_address?.full_name || 'Customer'}<br>
-                            ${order.shipping_address?.street || ''}, ${order.shipping_address?.city || ''}<br>
-                            ${order.shipping_address?.state || ''} - ${order.shipping_address?.postal_code || ''}<br>
-                            Phone: ${order.shipping_address?.phone || ''}
-                        </div>
-                        <div style="text-align: right;">
-                            <strong>Order ID:</strong> #${order.id.slice(0, 8).toUpperCase()}<br>
-                            <strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}<br>
-                            <strong>Status:</strong> ${order.status}
+                        <div class="row">
+                           <div>
+                                <strong>Billed To:</strong><br>
+                                ${addr.name || 'Customer'}<br>
+                                ${addr.address_line || ''}<br>
+                                ${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}<br>
+                                Phone: ${addr.phone || ''}
+                           </div>
+                           <div style="text-align: right;">
+                                <strong>Invoice #:</strong> ${order.invoice_number || 'NA'}<br>
+                                <strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}<br>
+                                <strong>Status:</strong> ${order.status}
+                           </div>
                         </div>
                     </div>
 
@@ -207,7 +217,16 @@ export default function OrderDetails() {
                         </View>
                     </View>
                     <Text style={{ fontSize: 13, color: '#999' }}>Placed on {new Date(order.created_at).toDateString()}</Text>
+                    {order.invoice_number && <Text style={{ fontSize: 13, color: '#999', marginTop: 4 }}>Invoice: {order.invoice_number}</Text>}
                 </View>
+
+                {/* Refund Status if Cancelled */}
+                {isCancelled && (
+                    <View style={{ backgroundColor: '#fff3e0', padding: 16, borderRadius: 12, marginBottom: 16 }}>
+                        <Text style={{ fontWeight: 'bold', color: '#e65100', marginBottom: 4 }}>Refund Status: {order.refund_status || 'Initiated'}</Text>
+                        <Text style={{ fontSize: 12, color: '#ef6c00' }}>Reason: {order.cancellation_reason}</Text>
+                    </View>
+                )}
 
                 {/* Items */}
                 <View style={{ backgroundColor: 'white', padding: 16, borderRadius: 12, marginBottom: 16 }}>
@@ -230,12 +249,10 @@ export default function OrderDetails() {
                 {!isCancelled && (
                     <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 12, marginBottom: 16 }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 20 }}>Order Status</Text>
-
                         {TRACKING_STEPS.map((step, index) => {
                             const isCompleted = index <= currentStepIndex;
                             const isCurrent = index === currentStepIndex;
                             const StepIcon = step.icon;
-
                             return (
                                 <View key={step.status} style={{ flexDirection: 'row', height: index === TRACKING_STEPS.length - 1 ? 24 : 60 }}>
                                     <View style={{ alignItems: 'center', width: 30 }}>
@@ -270,7 +287,7 @@ export default function OrderDetails() {
                 )}
 
                 {/* Actions: Invoice & Help */}
-                <View style={{ gap: 12, marginBottom: 30 }}>
+                <View style={{ gap: 12, marginBottom: 60 }}>
                     {!isCancelled && (
                         <TouchableOpacity
                             onPress={generateInvoice}
@@ -283,7 +300,7 @@ export default function OrderDetails() {
 
                     {!isCancelled && ['Pending', 'Processing', 'Packed'].includes(order.status) && (
                         <TouchableOpacity
-                            onPress={handleCancelOrder}
+                            onPress={() => setCancelModalVisible(true)}
                             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff0f0', padding: 15, borderRadius: 12 }}
                         >
                             <XCircle size={20} color="#d32f2f" />
@@ -293,6 +310,39 @@ export default function OrderDetails() {
                 </View>
 
             </ScrollView>
+
+            {/* Cancel Modal */}
+            {cancelModalVisible && (
+                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 20, width: '100%' }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 15 }}>Cancel Order</Text>
+                        <Text style={{ color: '#666', marginBottom: 15, fontSize: 14 }}>Please choose a reason for cancellation:</Text>
+
+                        {['Found better price', 'Ordered by mistake', 'Delivery is too late', 'Other'].map(r => (
+                            <TouchableOpacity key={r} onPress={() => setCancelReason(r)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
+                                <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: cancelReason === r ? 'black' : '#ccc', marginRight: 10, justifyContent: 'center', alignItems: 'center' }}>
+                                    {cancelReason === r && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: 'black' }} />}
+                                </View>
+                                <Text>{r}</Text>
+                            </TouchableOpacity>
+                        ))}
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 20, gap: 10 }}>
+                            <TouchableOpacity onPress={() => setCancelModalVisible(false)} style={{ padding: 10 }}>
+                                <Text style={{ color: '#666' }}>Close</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={submitCancellation}
+                                disabled={cancelling}
+                                style={{ backgroundColor: '#d32f2f', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+                            >
+                                {cancelling ? <ActivityIndicator color="white" size="small" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel Order</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            )}
         </SafeAreaView>
     );
+
 }

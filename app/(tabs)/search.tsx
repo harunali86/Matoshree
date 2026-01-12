@@ -2,7 +2,7 @@ import { View, Text, TextInput, ScrollView, Image, TouchableOpacity, FlatList, A
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search as SearchIcon, X } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Product } from '../../types';
 
@@ -10,10 +10,12 @@ const CATEGORIES = ['All', 'Running', 'Casual', 'Sports', 'Formal', 'Sandals'];
 
 export default function Search() {
     const router = useRouter();
+    const { q: paramQ, category: paramCat, brand: paramBrand } = useLocalSearchParams();
     const [query, setQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
     // Get Categories from Supabase (Dynamic)
     const [categories, setCategories] = useState<string[]>(['All']);
@@ -23,7 +25,6 @@ export default function Search() {
         const fetchCategories = async () => {
             const { data } = await supabase.from('categories').select('name').eq('is_active', true);
             if (data) {
-                // Filter out duplicates and 'All' from DB data
                 const dbCats = data.map(c => c.name).filter(name => name !== 'All');
                 setCategories(['All', ...dbCats]);
             }
@@ -31,10 +32,24 @@ export default function Search() {
         fetchCategories();
     }, []);
 
-    const fetchProducts = async (searchQuery?: string, category?: string) => {
+    // Initial Params Handling
+    useEffect(() => {
+        if (paramQ) setQuery(paramQ.toString());
+        if (paramCat) setSelectedCategory(paramCat.toString());
+        if (paramBrand) setSelectedBrand(paramBrand.toString());
+
+        // Trigger fetch based on params
+        fetchProducts(
+            paramQ?.toString() || '',
+            paramCat?.toString() || 'All',
+            paramBrand?.toString() || null
+        );
+    }, [paramQ, paramCat, paramBrand]);
+
+    const fetchProducts = async (searchQuery?: string, category?: string, brand?: string | null) => {
         setLoading(true);
         try {
-            let q = supabase.from('products').select('*, category:categories(name)');
+            let q = supabase.from('products').select('*, category:categories(name), brand:brands(name)');
 
             // Search Query Filter
             if (searchQuery && searchQuery.trim().length > 0) {
@@ -43,18 +58,21 @@ export default function Search() {
 
             // Category Filter
             if (category && category !== 'All') {
-                // Need to filter by category name, but products table has category_id. 
-                // We join categories table to filter by name.
-                // Or simplified: fetch category ID first. But better:
-                // Supabase inner join filter:
-                // !inner denotes filters on joined table
-                q = q.eq('categories.name', category);
-                // NOTE: Supabase simpler approach: 
-                // Let's rely on client side filter if complex, or distinct ID query.
-                // Assuming we can filter by querying the joined table:
                 const { data: catData } = await supabase.from('categories').select('id').eq('name', category).single();
                 if (catData) {
                     q = q.eq('category_id', catData.id);
+                }
+            }
+
+            // Brand Filter
+            if (brand) {
+                const { data: brandData } = await supabase.from('brands').select('id').eq('name', brand).single();
+                // Or try ID check if brand is ID? Assuming Name for now from URL
+                if (brandData) {
+                    q = q.eq('brand_id', brandData.id);
+                } else {
+                    // Try as ID directly
+                    q = q.eq('brand_id', brand);
                 }
             }
 
@@ -74,8 +92,15 @@ export default function Search() {
     };
 
     useEffect(() => {
-        fetchProducts(query, selectedCategory);
-    }, [selectedCategory]); // Re-fetch when category changes
+        // Effect for local state changes (manual interactions)
+        // Avoid double fetch if params just loaded, but simple approach:
+        // Only trigger if we are NOT in initial mount? No, safely triggers.
+        // We rely on handleSearch for query, but category buttons trigger this.
+        if (selectedCategory !== (paramCat?.toString() || 'All')) {
+            fetchProducts(query, selectedCategory, selectedBrand);
+        }
+    }, [selectedCategory]);
+
 
     const handleSearch = () => {
         fetchProducts(query, selectedCategory);

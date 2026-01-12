@@ -1,57 +1,74 @@
-import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, MessageCircle, Phone, Mail, ChevronDown, ChevronUp, HelpCircle, FileText, Shield, Truck, CreditCard, Package } from 'lucide-react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const FAQ_DATA = [
-    {
-        question: 'How do I track my order?',
-        answer: 'Go to Profile → My Orders → Tap on your order to see real-time tracking status.',
-        icon: Package
-    },
-    {
-        question: 'What is the return policy?',
-        answer: 'We offer 7-day easy returns on all products. Items must be unused with original tags.',
-        icon: Truck
-    },
-    {
-        question: 'How can I cancel my order?',
-        answer: 'You can cancel orders before they are shipped. Go to My Orders → Order Details → Cancel Order.',
-        icon: FileText
-    },
-    {
-        question: 'What payment methods are accepted?',
-        answer: 'We accept COD, UPI (GPay, PhonePe, Paytm), and Credit/Debit cards.',
-        icon: CreditCard
-    },
-    {
-        question: 'Is my payment information secure?',
-        answer: 'Yes! All payments are processed through secure encrypted channels.',
-        icon: Shield
-    },
+    { question: 'How do I track my order?', answer: 'Go to Profile → My Orders → Tap on your order to see real-time tracking status.', icon: Package },
+    { question: 'What is the return policy?', answer: 'We offer 7-day easy returns on all products. Items must be unused with original tags.', icon: Truck },
+    { question: 'How can I cancel my order?', answer: 'You can cancel orders before they are shipped. Go to My Orders → Order Details → Cancel Order.', icon: FileText },
+    { question: 'What payment methods are accepted?', answer: 'We accept COD, UPI (GPay, PhonePe, Paytm), and Credit/Debit cards.', icon: CreditCard },
+    { question: 'Is my payment information secure?', answer: 'Yes! All payments are processed through secure encrypted channels.', icon: Shield },
 ];
+
+interface Settings {
+    phone: string;
+    whatsapp: string;
+    email: string;
+}
 
 export default function Help() {
     const router = useRouter();
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [settings, setSettings] = useState<Settings>({ phone: '+91 83293 20708', whatsapp: '+91 83293 20708', email: 'support@matoshree.com' });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const { data } = await supabase.from('settings').select('store').eq('id', 'main').single();
+            if (data?.store) {
+                setSettings({
+                    phone: data.store.phone || settings.phone,
+                    whatsapp: data.store.whatsapp || settings.whatsapp,
+                    email: data.store.email || settings.email,
+                });
+            }
+        } catch (e) {
+            console.log('Using default settings');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatPhone = (phone: string) => phone.replace(/\s/g, '').replace('+', '');
 
     const contactSupport = (method: 'whatsapp' | 'phone' | 'email') => {
-        const supportNumber = '+919876543210';
-        const supportEmail = 'support@matoshree.com';
-
         switch (method) {
             case 'whatsapp':
-                Linking.openURL(`whatsapp://send?phone=${supportNumber}&text=Hi, I need help with my order`);
+                Linking.openURL(`whatsapp://send?phone=${formatPhone(settings.whatsapp)}&text=Hi, I need help with my order`);
                 break;
             case 'phone':
-                Linking.openURL(`tel:${supportNumber}`);
+                Linking.openURL(`tel:${formatPhone(settings.phone)}`);
                 break;
             case 'email':
-                Linking.openURL(`mailto:${supportEmail}?subject=Support Request`);
+                Linking.openURL(`mailto:${settings.email}?subject=Support Request`);
                 break;
         }
     };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#000" />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
