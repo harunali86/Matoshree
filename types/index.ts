@@ -5,6 +5,8 @@ export interface Product {
     short_description: string | null;
     price: number;
     sale_price: number | null;
+    price_wholesale?: number | null; // B2B
+    moq?: number | null; // B2B
     is_on_sale: boolean;
     thumbnail: string | null;
     images: string[] | null;

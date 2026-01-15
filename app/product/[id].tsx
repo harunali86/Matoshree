@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
 import { ArrowLeft, Heart, Share2, Star, Truck, Shield, RefreshCw, ChevronDown, ChevronUp, ShoppingBag, MapPin, Info, CheckCircle2 } from 'lucide-react-native';
 import { Product } from '../../types';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,6 +37,11 @@ export default function ProductDetails() {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const addItem = useCartStore(s => s.addItem);
+
+    // Auth Store - Correctly placed at the top level
+    const { user } = useAuthStore();
+    const isWholesaleUser = user?.role === 'wholesale' && user?.is_verified;
+
     const [selectedSize, setSelectedSize] = useState<number | null>(null);
     const [selectedColor, setSelectedColor] = useState(COLORS[0]);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -101,9 +107,29 @@ export default function ProductDetails() {
             Alert.alert('Select a Size', 'Please choose your size to continue.');
             return;
         }
-        if (product) {
-            addItem(product, selectedSize);
-            Alert.alert('Added to Bag', 'Ready for checkout?');
+
+        // MOQ Check
+        const moq = isWholesaleUser ? (product?.moq || 1) : 1;
+
+        if (isWholesaleUser && moq > 1) {
+            Alert.alert(
+                'Wholesale Order',
+                `Minimum Order Quantity for this item is ${moq} pairs.`,
+                [
+                    { text: 'Add 1 (Sample)', onPress: () => addToCart(1), style: 'cancel' }, // Optional
+                    { text: `Add ${moq} Pairs`, onPress: () => addToCart(moq) }
+                ]
+            );
+            return;
+        }
+
+        addToCart(1);
+    };
+
+    const addToCart = (qty: number) => {
+        if (product && selectedSize) {
+            addItem(product, selectedSize, qty);
+            Alert.alert('Added to Bag');
         }
     };
 
@@ -149,9 +175,13 @@ export default function ProductDetails() {
     }
 
     const avgRating = product.rating || 4.8;
-    const currentPrice = product.sale_price || product.price;
-    const originalPrice = product.price;
-    const discount = product.sale_price ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0;
+
+    // Pricing Logic
+    const displayPrice = isWholesaleUser && product.price_wholesale ? product.price_wholesale : (product.sale_price || product.price);
+    const originalPrice = isWholesaleUser ? product.price : product.price; // Start comparisons from Retail Price
+    const discount = !isWholesaleUser && product.sale_price ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0;
+
+    const moq = isWholesaleUser ? (product.moq || 1) : 1;
 
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -225,11 +255,23 @@ export default function ProductDetails() {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                    <Text style={{ fontSize: 24, fontWeight: 'bold' }}>₹{currentPrice.toLocaleString()}</Text>
-                                    {discount > 0 && <Text style={{ textDecorationLine: 'line-through', color: '#888', fontSize: 16 }}>₹{originalPrice.toLocaleString()}</Text>}
-                                    {discount > 0 && <Text style={{ color: '#00af00', fontWeight: 'bold', fontSize: 16 }}>{discount}% OFF</Text>}
+                                    <Text style={{ fontSize: 24, fontWeight: 'bold' }}>₹{displayPrice.toLocaleString()}</Text>
+
+                                    {/* Retail Discount or Wholesale Label */}
+                                    {isWholesaleUser ? (
+                                        <View style={{ backgroundColor: '#e0f2fe', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
+                                            <Text style={{ color: '#0284c7', fontWeight: 'bold', fontSize: 12 }}>WHOLESALE</Text>
+                                        </View>
+                                    ) : (
+                                        <>
+                                            {discount > 0 && <Text style={{ textDecorationLine: 'line-through', color: '#888', fontSize: 16 }}>₹{originalPrice.toLocaleString()}</Text>}
+                                            {discount > 0 && <Text style={{ color: '#00af00', fontWeight: 'bold', fontSize: 16 }}>{discount}% OFF</Text>}
+                                        </>
+                                    )}
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#666' }}>Inclusive of all taxes</Text>
+                                <Text style={{ fontSize: 12, color: '#666' }}>
+                                    {isWholesaleUser ? `Inclusive of GST (MOQ: ${moq} pairs)` : 'Inclusive of all taxes'}
+                                </Text>
                             </View>
                             <View style={{ alignItems: 'flex-end' }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 }}>
@@ -427,7 +469,7 @@ export default function ProductDetails() {
                 >
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Add to Bag</Text>
                     <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>|</Text>
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>₹{currentPrice.toLocaleString()}</Text>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>₹{displayPrice.toLocaleString()}</Text>
                 </TouchableOpacity>
             </View>
 

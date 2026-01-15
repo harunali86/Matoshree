@@ -12,6 +12,9 @@ export default function Signup() {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [isWholesale, setIsWholesale] = useState(false);
+    const [businessName, setBusinessName] = useState('');
+    const [gstNumber, setGstNumber] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -28,6 +31,10 @@ export default function Signup() {
             setError('Password must be at least 6 characters');
             return;
         }
+        if (isWholesale && (!businessName || !gstNumber)) {
+            setError('Business Name and GST Number are required for Wholesale accounts');
+            return;
+        }
 
         setLoading(true);
         setError('');
@@ -40,6 +47,9 @@ export default function Signup() {
                     data: {
                         full_name: fullName,
                         phone: phone,
+                        role: isWholesale ? 'wholesale' : 'retail',
+                        business_name: isWholesale ? businessName : null,
+                        gst_number: isWholesale ? gstNumber : null,
                     }
                 }
             });
@@ -98,6 +108,54 @@ export default function Signup() {
                             <Text style={{ color: '#c62828', textAlign: 'center' }}>{error}</Text>
                         </View>
                     ) : null}
+
+                    {/* Account Type Selector */}
+                    <View style={{ flexDirection: 'row', backgroundColor: '#f3f4f6', borderRadius: 30, padding: 4, marginBottom: 20 }}>
+                        <TouchableOpacity
+                            onPress={() => setIsWholesale(false)}
+                            style={{ flex: 1, paddingVertical: 12, borderRadius: 26, backgroundColor: !isWholesale ? 'black' : 'transparent', alignItems: 'center' }}
+                        >
+                            <Text style={{ fontWeight: '600', color: !isWholesale ? 'white' : '#6b7280' }}>Personal (Retail)</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => setIsWholesale(true)}
+                            style={{ flex: 1, paddingVertical: 12, borderRadius: 26, backgroundColor: isWholesale ? 'black' : 'transparent', alignItems: 'center' }}
+                        >
+                            <Text style={{ fontWeight: '600', color: isWholesale ? 'white' : '#6b7280' }}>Business (Wholesale)</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {isWholesale && (
+                        <View style={{ marginBottom: 20, backgroundColor: '#f0f9ff', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#bae6fd' }}>
+                            <Text style={{ fontSize: 13, color: '#0369a1', marginBottom: 4, fontWeight: '600' }}>ℹ️ Business Account</Text>
+                            <Text style={{ fontSize: 12, color: '#0c4a6e' }}>Registering as a wholesaler allows you to access bulk pricing. Your account will require approval.</Text>
+                        </View>
+                    )}
+
+                    {isWholesale && (
+                        <>
+                            <View style={{ marginBottom: 18 }}>
+                                <Text style={{ fontWeight: '600', marginBottom: 8, color: '#333' }}>Business Name *</Text>
+                                <TextInput
+                                    value={businessName}
+                                    onChangeText={setBusinessName}
+                                    placeholder="Enter your business/shop name"
+                                    style={{ backgroundColor: '#f5f5f5', padding: 16, borderRadius: 12, fontSize: 16, borderWidth: 1, borderColor: '#eee' }}
+                                />
+                            </View>
+
+                            <View style={{ marginBottom: 18 }}>
+                                <Text style={{ fontWeight: '600', marginBottom: 8, color: '#333' }}>GST Number *</Text>
+                                <TextInput
+                                    value={gstNumber}
+                                    onChangeText={setGstNumber}
+                                    placeholder="Enter GST Number"
+                                    autoCapitalize="characters"
+                                    style={{ backgroundColor: '#f5f5f5', padding: 16, borderRadius: 12, fontSize: 16, borderWidth: 1, borderColor: '#eee' }}
+                                />
+                            </View>
+                        </>
+                    )}
 
                     <View style={{ marginBottom: 18 }}>
                         <Text style={{ fontWeight: '600', marginBottom: 8, color: '#333' }}>Full Name *</Text>

@@ -5,6 +5,7 @@ import { Menu, Search, ShoppingBag, Heart, Clock, Zap, TrendingUp, ChevronRight 
 import { supabase } from '../../lib/supabase';
 import { Product, Banner, Category, Brand, Collection } from '../../types';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -126,28 +127,47 @@ export default function Home() {
         </View>
     );
 
-    const renderProductCard = ({ item }: { item: Product }) => (
-        <TouchableOpacity onPress={() => router.push(`/product/${item.id}`)} style={{ width: 155, marginRight: 12 }}>
-            <View style={{ width: 155, height: 175, backgroundColor: '#f5f5f5', borderRadius: 14, overflow: 'hidden', marginBottom: 10 }}>
-                <Image source={{ uri: getProductImage(item) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                {item.is_on_sale && (
-                    <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#ff3b30', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
-                        <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>SALE</Text>
-                    </View>
+    const { user } = useAuthStore();
+    const isWholesaleUser = user?.role === 'wholesale' && user?.is_verified;
+
+    const renderProductCard = ({ item }: { item: Product }) => {
+        const displayPrice = isWholesaleUser && item.price_wholesale ? item.price_wholesale : (item.sale_price || item.price);
+        const showSaleTag = !isWholesaleUser && item.is_on_sale;
+
+        return (
+            <TouchableOpacity onPress={() => router.push(`/product/${item.id}`)} style={{ width: 155, marginRight: 12 }}>
+                <View style={{ width: 155, height: 175, backgroundColor: '#f5f5f5', borderRadius: 14, overflow: 'hidden', marginBottom: 10 }}>
+                    <Image source={{ uri: getProductImage(item) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    {showSaleTag && (
+                        <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#ff3b30', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
+                            <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>SALE</Text>
+                        </View>
+                    )}
+                    {isWholesaleUser && (
+                        <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#0284c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
+                            <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>B2B</Text>
+                        </View>
+                    )}
+                    <TouchableOpacity style={{ position: 'absolute', top: 8, right: 8, width: 30, height: 30, backgroundColor: 'white', borderRadius: 15, justifyContent: 'center', alignItems: 'center' }}>
+                        <Heart size={14} color="#333" />
+                    </TouchableOpacity>
+                </View>
+                <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 3 }} numberOfLines={1}>{item.name}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{displayPrice?.toLocaleString()}</Text>
+                    {!isWholesaleUser && item.is_on_sale && item.sale_price && (
+                        <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
+                    )}
+                    {isWholesaleUser && (
+                        <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>/ pair</Text>
+                    )}
+                </View>
+                {isWholesaleUser && item.moq && item.moq > 1 && (
+                    <Text style={{ color: '#666', fontSize: 10 }}>Min: {item.moq} pairs</Text>
                 )}
-                <TouchableOpacity style={{ position: 'absolute', top: 8, right: 8, width: 30, height: 30, backgroundColor: 'white', borderRadius: 15, justifyContent: 'center', alignItems: 'center' }}>
-                    <Heart size={14} color="#333" />
-                </TouchableOpacity>
-            </View>
-            <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 3 }} numberOfLines={1}>{item.name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{(item.sale_price || item.price)?.toLocaleString()}</Text>
-                {item.is_on_sale && item.sale_price && (
-                    <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     const renderCategory = ({ item }: { item: Category }) => {
         const catImage = CATEGORY_IMAGES[item.name.toLowerCase()] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200';

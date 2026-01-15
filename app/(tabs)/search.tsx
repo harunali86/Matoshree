@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Product } from '../../types';
+import { useAuthStore } from '../../store/authStore';
 
 const CATEGORIES = ['All', 'Running', 'Casual', 'Sports', 'Formal', 'Sandals'];
 
@@ -127,51 +128,70 @@ export default function Search() {
         return placeholders[randomId] || placeholders[0];
     };
 
-    const renderProduct = ({ item }: { item: Product }) => (
-        <TouchableOpacity
-            style={{
-                width: '48%',
-                backgroundColor: 'white',
-                borderRadius: 16,
-                padding: 12,
-                marginBottom: 15,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2
-            }}
-            onPress={() => router.push(`/product/${item.id}`)}
-        >
-            <View style={{
-                aspectRatio: 1,
-                backgroundColor: '#f9f9f9',
-                borderRadius: 12,
-                marginBottom: 12,
-                justifyContent: 'center',
-                alignItems: 'center',
-                overflow: 'hidden'
-            }}>
-                <Image
-                    source={{ uri: getProductImage(item) }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                />
-                {item.is_on_sale && (
-                    <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: '#ff3b30', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                        <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>SALE</Text>
-                    </View>
+    const { user } = useAuthStore();
+    const isWholesaleUser = user?.role === 'wholesale' && user?.is_verified;
+
+    const renderProduct = ({ item }: { item: Product }) => {
+        const displayPrice = isWholesaleUser && item.price_wholesale ? item.price_wholesale : (item.sale_price || item.price);
+        const showSaleTag = !isWholesaleUser && item.is_on_sale;
+
+        return (
+            <TouchableOpacity
+                style={{
+                    width: '48%',
+                    backgroundColor: 'white',
+                    borderRadius: 16,
+                    padding: 12,
+                    marginBottom: 15,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                    elevation: 2
+                }}
+                onPress={() => router.push(`/product/${item.id}`)}
+            >
+                <View style={{
+                    aspectRatio: 1,
+                    backgroundColor: '#f9f9f9',
+                    borderRadius: 12,
+                    marginBottom: 12,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    overflow: 'hidden'
+                }}>
+                    <Image
+                        source={{ uri: getProductImage(item) }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                    />
+                    {showSaleTag && (
+                        <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: '#ff3b30', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                            <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>SALE</Text>
+                        </View>
+                    )}
+                    {isWholesaleUser && (
+                        <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: '#0284c7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                            <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>B2B</Text>
+                        </View>
+                    )}
+                </View>
+                <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 4, height: 32 }} numberOfLines={2}>{item.name || 'Product'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{displayPrice?.toLocaleString()}</Text>
+                    {!isWholesaleUser && item.is_on_sale && item.sale_price && (
+                        <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
+                    )}
+                    {isWholesaleUser && (
+                        <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>/ pair</Text>
+                    )}
+                </View>
+                {isWholesaleUser && item.moq && item.moq > 1 && (
+                    <Text style={{ color: '#666', fontSize: 10 }}>Min: {item.moq} pairs</Text>
                 )}
-            </View>
-            <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 4, height: 32 }} numberOfLines={2}>{item.name || 'Product'}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{(item.sale_price || item.price)?.toLocaleString()}</Text>
-                {item.is_on_sale && item.sale_price && (
-                    <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#f8f8f8' }}>
