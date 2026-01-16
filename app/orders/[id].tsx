@@ -345,6 +345,24 @@ export default function OrderDetails() {
                     </View>
                 )}
 
+                {/* Track Order via Shiprocket */}
+                {!isCancelled && order.status === 'Shipped' && order.awb_number && (
+                    <TouchableOpacity
+                        onPress={() => {
+                            const trackingUrl = `https://shiprocket.co/tracking/${order.awb_number}`;
+                            // Open in browser
+                            import('expo-linking').then(Linking => Linking.openURL(trackingUrl));
+                        }}
+                        style={{
+                            flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                            backgroundColor: '#3b82f6', padding: 15, borderRadius: 12, marginBottom: 16
+                        }}
+                    >
+                        <Truck size={20} color="white" />
+                        <Text style={{ fontWeight: '600', marginLeft: 10, color: 'white' }}>Track Shipment (AWB: {order.awb_number})</Text>
+                    </TouchableOpacity>
+                )}
+
                 {/* Actions: Invoice & Help */}
                 <View style={{ gap: 12, marginBottom: 60 }}>
                     {!isCancelled && (
@@ -369,11 +387,22 @@ export default function OrderDetails() {
 
                     {order.status === 'Delivered' && !order.return_status && (
                         <TouchableOpacity
-                            onPress={() => setReturnModalVisible(true)}
+                            onPress={() => router.push(`/return-request?orderId=${order.id}`)}
                             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'black', padding: 15, borderRadius: 12 }}
                         >
                             <Package size={20} color="white" />
                             <Text style={{ fontWeight: '600', marginLeft: 10, color: 'white' }}>Return / Exchange</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Write Review Button */}
+                    {order.status === 'Delivered' && (
+                        <TouchableOpacity
+                            onPress={() => router.push(`/write-review?orderId=${order.id}&productId=${order.order_items[0]?.product_id}`)}
+                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fef3c7', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#fcd34d' }}
+                        >
+                            <Text style={{ fontSize: 18, marginRight: 8 }}>⭐</Text>
+                            <Text style={{ fontWeight: '600', color: '#92400e' }}>Write a Review</Text>
                         </TouchableOpacity>
                     )}
 

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Search, ShoppingBag, User } from 'lucide-react-native';
+import { Home, Search, ShoppingBag, User, Grid3X3 } from 'lucide-react-native';
 import { useCartStore } from '../../store/cartStore';
 
 export default function TabsLayout() {
@@ -17,6 +17,14 @@ export default function TabsLayout() {
                 options={{
                     tabBarIcon: ({ color, size }) => <Home strokeWidth={2} color={color} size={22} />,
                     title: 'Home',
+                    tabBarLabelStyle: { fontSize: 11, fontWeight: '600' }
+                }}
+            />
+            <Tabs.Screen
+                name="categories"
+                options={{
+                    tabBarIcon: ({ color, size }) => <Grid3X3 strokeWidth={2} color={color} size={22} />,
+                    title: 'Categories',
                     tabBarLabelStyle: { fontSize: 11, fontWeight: '600' }
                 }}
             />

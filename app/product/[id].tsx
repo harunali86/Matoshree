@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { useRecentlyViewedStore } from '../../store/recentlyViewedStore';
 import { ArrowLeft, Heart, Star, Truck, RefreshCw, ShoppingBag, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { Product } from '../../types';
 
@@ -95,6 +96,14 @@ export default function ProductDetails() {
 
                     // Auto-select size (Size 8 -> index 2)
                     setSelectedSize(SIZES[2]);
+
+                    // Track in Recently Viewed
+                    useRecentlyViewedStore.getState().addProduct({
+                        id: currentProduct.id,
+                        name: currentProduct.name,
+                        price: currentProduct.price,
+                        thumbnail: currentProduct.thumbnail
+                    });
 
                     if (variantData && variantData.length > 0) {
                         setVariants(variantData);

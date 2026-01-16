@@ -207,46 +207,65 @@ export default function Checkout() {
                     ) : (
                         <>
                             {addresses.map(addr => (
-                                <View
+                                <TouchableOpacity
                                     key={addr.id}
+                                    onPress={() => setSelectedAddress(addr)}
                                     style={{
                                         marginBottom: 10,
-                                        borderRadius: 10,
-                                        overflow: 'hidden'
+                                        padding: 15,
+                                        borderWidth: selectedAddress?.id === addr.id ? 2 : 1,
+                                        borderColor: selectedAddress?.id === addr.id ? 'black' : '#eee',
+                                        borderRadius: 12,
+                                        backgroundColor: selectedAddress?.id === addr.id ? '#fafafa' : 'white',
+                                        flexDirection: 'row',
+                                        alignItems: 'flex-start'
                                     }}
                                 >
+                                    {/* Radio Button */}
+                                    <View style={{
+                                        width: 22, height: 22, borderRadius: 11,
+                                        borderWidth: 2,
+                                        borderColor: selectedAddress?.id === addr.id ? 'black' : '#ddd',
+                                        justifyContent: 'center', alignItems: 'center',
+                                        marginRight: 12, marginTop: 2
+                                    }}>
+                                        {selectedAddress?.id === addr.id && (
+                                            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: 'black' }} />
+                                        )}
+                                    </View>
+
+                                    {/* Address Content */}
+                                    <View style={{ flex: 1 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{addr.name}</Text>
+                                            {addr.is_default && (
+                                                <View style={{ backgroundColor: '#e8f5e9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
+                                                    <Text style={{ fontSize: 10, color: '#2e7d32', fontWeight: '600' }}>DEFAULT</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        <Text style={{ color: '#555', marginTop: 4, lineHeight: 20 }}>
+                                            {addr.address_line}, {addr.city}, {addr.state} - {addr.pincode}
+                                        </Text>
+                                        <Text style={{ color: '#666', marginTop: 4, fontSize: 13 }}>📞 {addr.phone}</Text>
+                                    </View>
+
+                                    {/* Edit Button - Subtle icon only */}
                                     <TouchableOpacity
-                                        onPress={() => setSelectedAddress(addr)}
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/add-address?id=${addr.id}` as any);
+                                        }}
                                         style={{
-                                            padding: 15,
-                                            borderWidth: selectedAddress?.id === addr.id ? 2 : 1,
-                                            borderColor: selectedAddress?.id === addr.id ? 'black' : '#eee',
-                                            borderRadius: 10,
-                                            flexDirection: 'row',
-                                            alignItems: 'center'
+                                            width: 32, height: 32, borderRadius: 16,
+                                            backgroundColor: '#f5f5f5',
+                                            justifyContent: 'center', alignItems: 'center',
+                                            marginLeft: 8
                                         }}
                                     >
-                                        <View style={{ flex: 1 }}>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{addr.name}</Text>
-                                                <TouchableOpacity
-                                                    onPress={() => router.push(`/add-address?id=${addr.id}` as any)}
-                                                    style={{ padding: 5, marginRight: 5 }}
-                                                >
-                                                    <Text style={{ color: '#666', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' }}>EDIT</Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                            <Text style={{ color: '#666', marginTop: 0 }}>{addr.address_line}</Text>
-                                            <Text style={{ color: '#666' }}>{addr.city}, {addr.state} - {addr.pincode}</Text>
-                                            <Text style={{ color: '#666', marginTop: 3 }}>📞 {addr.phone}</Text>
-                                        </View>
-                                        {selectedAddress?.id === addr.id && (
-                                            <View style={{ width: 24, height: 24, backgroundColor: 'black', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginLeft: 10 }}>
-                                                <Check size={14} color="white" />
-                                            </View>
-                                        )}
+                                        <Text style={{ fontSize: 14 }}>✏️</Text>
                                     </TouchableOpacity>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                         </>
                     )}

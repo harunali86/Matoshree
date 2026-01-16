@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
+import { useNotificationStore } from '../../store/notificationStore';
 
 interface UserProfile {
     id: string;
@@ -17,7 +18,15 @@ export default function Profile() {
     const router = useRouter();
     // Use Store for Global State
     const { user, signOut, isAuthenticated } = useAuthStore();
+    const { unreadCount, fetchNotifications } = useNotificationStore();
     const [loading, setLoading] = useState(false); // Local loading state for initial check only if needed
+
+    // Fetch notifications when user is available
+    useEffect(() => {
+        if (user?.id) {
+            fetchNotifications(user.id);
+        }
+    }, [user?.id]);
 
     // No need for local useEffect listener if store handles it, 
     // but store persistence might take a ms to rehydrate.
@@ -45,18 +54,23 @@ export default function Profile() {
         { icon: Package, label: 'My Orders', route: '/my-orders', requiresAuth: true },
         { icon: MapPin, label: 'Saved Addresses', route: '/addresses', requiresAuth: true },
         { icon: Heart, label: 'Wishlist', route: '/wishlist', requiresAuth: true },
+        { icon: CreditCard, label: 'Payment Methods', route: '/payment-methods', requiresAuth: true },
     ];
 
     const b2bMenuItems = user?.role === 'wholesale' ? [
         { icon: CreditCard, label: 'My Quotations', route: '/b2b/quotations', requiresAuth: true },
     ] : [];
 
+    const rewardsItems = [
+        { icon: Heart, label: 'Rewards & Referrals', route: '/rewards', requiresAuth: true },
+    ];
+
     const otherMenuItems = [
         { icon: HelpCircle, label: 'Help & Support', route: '/help', requiresAuth: false },
         { icon: Settings, label: 'Settings', route: '/settings', requiresAuth: false },
     ];
 
-    const menuItems = [...baseMenuItems, ...b2bMenuItems, ...otherMenuItems];
+    const menuItems = [...baseMenuItems, ...rewardsItems, ...b2bMenuItems, ...otherMenuItems];
 
     const handleMenuPress = (item: any) => {
         if (item.requiresAuth && !user) {
@@ -82,6 +96,28 @@ export default function Profile() {
             <ScrollView>
                 {/* Header */}
                 <View style={{ padding: 25, alignItems: 'center', borderBottomWidth: 1, borderColor: '#f0f0f0' }}>
+                    {/* Notification Bell */}
+                    {user && (
+                        <TouchableOpacity
+                            onPress={() => router.push('/notifications')}
+                            style={{ position: 'absolute', top: 20, right: 20 }}
+                        >
+                            <Bell size={24} color="#333" />
+                            {unreadCount > 0 && (
+                                <View style={{
+                                    position: 'absolute', top: -5, right: -5,
+                                    backgroundColor: '#ef4444', width: 18, height: 18,
+                                    borderRadius: 9, justifyContent: 'center', alignItems: 'center',
+                                    borderWidth: 2, borderColor: 'white'
+                                }}>
+                                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    )}
+
                     <View style={{
                         width: 90,
                         height: 90,

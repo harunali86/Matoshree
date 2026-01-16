@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { Product, Banner, Category, Brand, Collection } from '../../types';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { useRecentlyViewedStore } from '../../store/recentlyViewedStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -86,11 +87,12 @@ export default function Home() {
                     { id: 'categories', visible: true, order: 2 },
                     { id: 'flash_sale', visible: true, order: 3 },
                     { id: 'brands', visible: true, order: 4 },
-                    { id: 'trending', visible: true, order: 5 },
-                    { id: 'new_arrivals', visible: true, order: 6 },
-                    { id: 'collections', visible: true, order: 7 },
-                    { id: 'member_banner', visible: true, order: 8 },
-                    { id: 'best_sellers', visible: true, order: 9 }
+                    { id: 'recently_viewed', visible: true, order: 5 },
+                    { id: 'trending', visible: true, order: 6 },
+                    { id: 'new_arrivals', visible: true, order: 7 },
+                    { id: 'collections', visible: true, order: 8 },
+                    { id: 'member_banner', visible: true, order: 9 },
+                    { id: 'best_sellers', visible: true, order: 10 }
                 ]);
             }
 
@@ -325,6 +327,38 @@ export default function Home() {
                 <FlatList data={products.slice(0, 8)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_best'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
             </View>
         ),
+        'recently_viewed': () => {
+            const recentProducts = useRecentlyViewedStore.getState().products;
+            if (recentProducts.length === 0) return null;
+            return (
+                <View style={{ paddingVertical: 20 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, marginBottom: 14 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Clock size={18} color="#666" />
+                            <Text style={{ fontSize: 17, fontWeight: '700' }}>Recently Viewed</Text>
+                        </View>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }}>
+                        {recentProducts.map((item) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                onPress={() => router.push(`/product/${item.id}`)}
+                                style={{ width: 130, marginRight: 12 }}
+                            >
+                                <Image
+                                    source={{ uri: item.thumbnail || undefined }}
+                                    style={{ width: 130, height: 160, borderRadius: 12, backgroundColor: '#f0f0f0', marginBottom: 8 }}
+                                />
+                                <Text style={{ fontSize: 13, fontWeight: '600', color: '#111' }} numberOfLines={1}>
+                                    {item.name}
+                                </Text>
+                                <Text style={{ fontSize: 14, fontWeight: 'bold', marginTop: 2 }}>₹{item.price}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            );
+        },
     };
 
 
