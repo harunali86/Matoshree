@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Home, Search, ShoppingBag, User } from 'lucide-react-native';
+import { useCartStore } from '../../store/cartStore';
 
 export default function TabsLayout() {
+    const items = useCartStore((state) => state.items);
+
     return (
         <Tabs screenOptions={{
             headerShown: false,
@@ -30,7 +33,9 @@ export default function TabsLayout() {
                 options={{
                     tabBarIcon: ({ color, size }) => <ShoppingBag strokeWidth={2} color={color} size={22} />,
                     title: 'Bag',
-                    tabBarLabelStyle: { fontSize: 11, fontWeight: '600' }
+                    tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+                    tabBarBadge: items.length > 0 ? items.length : undefined,
+                    tabBarBadgeStyle: { backgroundColor: '#ff3b30', fontSize: 10, fontWeight: 'bold' }
                 }}
             />
             <Tabs.Screen

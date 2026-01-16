@@ -11,7 +11,7 @@ const CATEGORIES = ['All', 'Running', 'Casual', 'Sports', 'Formal', 'Sandals'];
 
 export default function Search() {
     const router = useRouter();
-    const { q: paramQ, category: paramCat, brand: paramBrand } = useLocalSearchParams();
+    const { q: paramQ, category: paramCat, brand: paramBrand, collection: paramCollection } = useLocalSearchParams();
     const [query, setQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -43,11 +43,12 @@ export default function Search() {
         fetchProducts(
             paramQ?.toString() || '',
             paramCat?.toString() || 'All',
-            paramBrand?.toString() || null
+            paramBrand?.toString() || null,
+            paramCollection?.toString() || null
         );
-    }, [paramQ, paramCat, paramBrand]);
+    }, [paramQ, paramCat, paramBrand, paramCollection]);
 
-    const fetchProducts = async (searchQuery?: string, category?: string, brand?: string | null) => {
+    const fetchProducts = async (searchQuery?: string, category?: string, brand?: string | null, collection?: string | null) => {
         setLoading(true);
         try {
             let q = supabase.from('products').select('*, category:categories(name), brand:brands(name)');
@@ -75,6 +76,12 @@ export default function Search() {
                     // Try as ID directly
                     q = q.eq('brand_id', brand);
                 }
+            }
+
+            // Collection Filter (Using Tags as proxy)
+            if (collection) {
+                // 'tags' is a text[] array, so we must use array operators like .contains
+                q = q.contains('tags', [collection]);
             }
 
             const { data, error } = await q.limit(50);

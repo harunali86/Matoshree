@@ -52,15 +52,18 @@ export default function Home() {
 
     const flatListRef = useRef<FlatList>(null);
 
+    const [layout, setLayout] = useState<any[]>([]);
+
     const fetchData = async () => {
         try {
-            const [productsRes, bannersRes, categoriesRes, saleRes, brandsRes, collectionsRes] = await Promise.all([
+            const [productsRes, bannersRes, categoriesRes, saleRes, brandsRes, collectionsRes, layoutRes] = await Promise.all([
                 supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(20),
                 supabase.from('hero_slides').select('*').eq('is_active', true).order('display_order'),
                 supabase.from('categories').select('*').eq('is_active', true).order('display_order'),
                 supabase.from('products').select('*').eq('is_on_sale', true).eq('is_active', true).limit(10),
                 supabase.from('brands').select('*').order('name'),
-                supabase.from('collections').select('*').eq('is_active', true).order('name')
+                supabase.from('collections').select('*').eq('is_active', true).order('name'),
+                supabase.from('app_config').select('value').eq('key', 'home_layout').single()
             ]);
 
             if (productsRes.data) setProducts(productsRes.data);
@@ -69,6 +72,28 @@ export default function Home() {
             if (saleRes.data) setSaleProducts(saleRes.data);
             if (brandsRes.data) setBrands(brandsRes.data);
             if (collectionsRes.data) setCollections(collectionsRes.data);
+
+            // Set Layout
+            if (layoutRes.data?.value?.sections) {
+                const sortedSections = layoutRes.data.value.sections
+                    .filter((s: any) => s.visible)
+                    .sort((a: any, b: any) => a.order - b.order);
+                setLayout(sortedSections);
+            } else {
+                // Default Layout fallback
+                setLayout([
+                    { id: 'hero_banner', visible: true, order: 1 },
+                    { id: 'categories', visible: true, order: 2 },
+                    { id: 'flash_sale', visible: true, order: 3 },
+                    { id: 'brands', visible: true, order: 4 },
+                    { id: 'trending', visible: true, order: 5 },
+                    { id: 'new_arrivals', visible: true, order: 6 },
+                    { id: 'collections', visible: true, order: 7 },
+                    { id: 'member_banner', visible: true, order: 8 },
+                    { id: 'best_sellers', visible: true, order: 9 }
+                ]);
+            }
+
         } catch (error) {
             console.log('Fetch error:', error);
         } finally {
@@ -196,6 +221,113 @@ export default function Home() {
         );
     };
 
+    // --- Dynamic Section Renderers ---
+
+    const SectionRenderers: { [key: string]: () => React.ReactNode } = {
+        'hero_banner': () => (
+            <View>
+                <FlatList ref={flatListRef} data={displayBanners} renderItem={renderHeroBanner} keyExtractor={(item) => item.id} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActiveSlide(Math.round(e.nativeEvent.contentOffset.x / width))} />
+                <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 }}>
+                    {displayBanners.map((_, i) => (<View key={i} style={{ width: activeSlide === i ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: activeSlide === i ? 'white' : 'rgba(255,255,255,0.5)' }} />))}
+                </View>
+            </View>
+        ),
+        'categories': () => (
+            <View style={{ paddingVertical: 22 }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Category</Text>
+                <FlatList data={categories.filter(c => c.name !== 'All')} renderItem={renderCategory} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
+            </View>
+        ),
+        'flash_sale': () => (saleProducts.length > 0) ? (
+            <View style={{ backgroundColor: '#fff8e1', paddingVertical: 20, marginBottom: 20 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Zap size={20} color="#f57c00" fill="#f57c00" />
+                        <Text style={{ fontSize: 17, fontWeight: '800', color: '#e65100' }}>Flash Sale</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Clock size={14} color="#666" />
+                        <Text style={{ color: '#666', fontSize: 12 }}>Ends in 23:45:12</Text>
+                    </View>
+                </View>
+                <FlatList data={saleProducts} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_sale'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
+            </View>
+        ) : null,
+        'brands': () => (
+            <View style={{ paddingVertical: 20 }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Brand</Text>
+                <FlatList data={displayBrands} renderItem={renderBrand} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
+            </View>
+        ),
+        'trending': () => (
+            <View style={{ paddingHorizontal: 18, paddingVertical: 15 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                    <TrendingUp size={18} color="#333" />
+                    <Text style={{ fontSize: 17, fontWeight: '700' }}>Trending</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {['SummerStyle', 'RunningShoes', 'CasualWear', 'OfficeLook', 'Sneakerhead', 'ComfortFirst'].map((tag, i) => (
+                        <TouchableOpacity key={i} onPress={() => router.push(`/(tabs)/search?q=${tag}`)} style={{ backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 10 }}>
+                            <Text style={{ fontWeight: '600', color: '#333' }}>#{tag}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+        ),
+        'new_arrivals': () => (
+            <View style={{ paddingBottom: 20 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingHorizontal: 18 }}>
+                    <Text style={{ fontSize: 17, fontWeight: '700' }}>New Arrivals</Text>
+                    <TouchableOpacity onPress={() => router.push('/(tabs)/search')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ color: '#666', fontWeight: '600', fontSize: 13 }}>See All</Text>
+                        <ChevronRight size={16} color="#666" />
+                    </TouchableOpacity>
+                </View>
+                {loading ? <ActivityIndicator size="large" color="black" style={{ marginVertical: 30 }} /> : <FlatList data={products.filter(p => p.is_new_arrival).length > 0 ? products.filter(p => p.is_new_arrival) : products.slice(0, 6)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_new'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />}
+            </View>
+        ),
+        'collections': () => (
+            <View style={{ paddingVertical: 20 }}>
+                <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Collection</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }}>
+                    {displayCollections.map((col) => (
+                        <TouchableOpacity key={col.id} onPress={() => router.push(`/(tabs)/search?collection=${encodeURIComponent(col.name)}`)} style={{ width: 150, marginRight: 12 }}>
+                            <View style={{ width: 150, height: 180, borderRadius: 14, overflow: 'hidden', marginBottom: 8 }}>
+                                <Image source={{ uri: col.image_url || col.image || 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{col.name}</Text>
+                                    <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>{col.count || 0} items</Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+        ),
+        'member_banner': () => (
+            <TouchableOpacity style={{ marginHorizontal: 18, marginBottom: 25, height: 130, backgroundColor: '#111', borderRadius: 18, flexDirection: 'row', overflow: 'hidden' }}>
+                <View style={{ flex: 1, padding: 18, justifyContent: 'center' }}>
+                    <Text style={{ color: '#888', fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>MEMBER EXCLUSIVE</Text>
+                    <Text style={{ color: 'white', fontSize: 20, fontWeight: '900', marginBottom: 8 }}>GET 20% OFF</Text>
+                    <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Join Free →</Text>
+                </View>
+                <View style={{ width: 110, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 40 }}>🎁</Text>
+                </View>
+            </TouchableOpacity>
+        ),
+        'best_sellers': () => (
+            <View style={{ paddingVertical: 20 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingHorizontal: 18 }}>
+                    <Text style={{ fontSize: 17, fontWeight: '700' }}>Best Sellers</Text>
+                    <TouchableOpacity><Text style={{ color: '#666', fontWeight: '600', fontSize: 13 }}>See All</Text></TouchableOpacity>
+                </View>
+                <FlatList data={products.slice(0, 8)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_best'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
+            </View>
+        ),
+    };
+
+
     return (
         <View style={{ flex: 1, backgroundColor: 'white' }}>
             <StatusBar barStyle="light-content" />
@@ -224,132 +356,12 @@ export default function Home() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-                {/* Hero Carousel */}
-                <View>
-                    <FlatList ref={flatListRef} data={displayBanners} renderItem={renderHeroBanner} keyExtractor={(item) => item.id} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActiveSlide(Math.round(e.nativeEvent.contentOffset.x / width))} />
-                    <View style={{ position: 'absolute', bottom: 12, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 }}>
-                        {displayBanners.map((_, i) => (<View key={i} style={{ width: activeSlide === i ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: activeSlide === i ? 'white' : 'rgba(255,255,255,0.5)' }} />))}
-                    </View>
-                </View>
+                {layout.map((section, index) => {
+                    if (!section.visible) return null;
+                    const Renderer = SectionRenderers[section.id];
+                    return Renderer ? <View key={index}>{Renderer()}</View> : null;
+                })}
 
-                {/* Categories with Icons */}
-                <View style={{ paddingVertical: 22 }}>
-                    <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Category</Text>
-                    <FlatList
-                        data={categories.filter(c => c.name !== 'All')}
-                        renderItem={renderCategory}
-                        keyExtractor={(item) => item.id}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingHorizontal: 18 }}
-                    />
-                </View>
-
-                {/* ⚡ Flash Sale */}
-                {(saleProducts.length > 0 || products.length > 0) && (
-                    <View style={{ backgroundColor: '#fff8e1', paddingVertical: 20, marginBottom: 20 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, marginBottom: 14 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Zap size={20} color="#f57c00" fill="#f57c00" />
-                                <Text style={{ fontSize: 17, fontWeight: '800', color: '#e65100' }}>Flash Sale</Text>
-                            </View>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Clock size={14} color="#666" />
-                                <Text style={{ color: '#666', fontSize: 12 }}>Ends in 23:45:12</Text>
-                            </View>
-                        </View>
-                        <FlatList data={saleProducts.length > 0 ? saleProducts : products.slice(0, 5)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_sale'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
-                    </View>
-                )}
-
-                {/* 🏷️ Shop by Brand - Real Logos */}
-                <View style={{ paddingVertical: 20 }}>
-                    <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Brand</Text>
-                    <FlatList
-                        data={displayBrands}
-                        renderItem={renderBrand}
-                        keyExtractor={(item) => item.id}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingHorizontal: 18 }}
-                    />
-                </View>
-
-                {/* 🔥 Trending Hashtags */}
-                <View style={{ paddingHorizontal: 18, paddingVertical: 15 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                        <TrendingUp size={18} color="#333" />
-                        <Text style={{ fontSize: 17, fontWeight: '700' }}>Trending</Text>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {['SummerStyle', 'RunningShoes', 'CasualWear', 'OfficeLook', 'Sneakerhead', 'ComfortFirst'].map((tag, i) => (
-                            <TouchableOpacity
-                                key={i}
-                                onPress={() => router.push(`/(tabs)/search?q=${tag}`)}
-                                style={{ backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 10 }}
-                            >
-                                <Text style={{ fontWeight: '600', color: '#333' }}>#{tag}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* New Arrivals */}
-                <View style={{ paddingBottom: 20 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingHorizontal: 18 }}>
-                        <Text style={{ fontSize: 17, fontWeight: '700' }}>New Arrivals</Text>
-                        <TouchableOpacity onPress={() => router.push('/(tabs)/search')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ color: '#666', fontWeight: '600', fontSize: 13 }}>See All</Text>
-                            <ChevronRight size={16} color="#666" />
-                        </TouchableOpacity>
-                    </View>
-                    {loading ? (
-                        <ActivityIndicator size="large" color="black" style={{ marginVertical: 30 }} />
-                    ) : (
-                        <FlatList data={products.filter(p => p.is_new_arrival).length > 0 ? products.filter(p => p.is_new_arrival) : products.slice(0, 6)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_new'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
-                    )}
-                </View>
-
-                {/* 🎨 Shop by Collection */}
-                <View style={{ paddingVertical: 20 }}>
-                    <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 14, paddingHorizontal: 18 }}>Shop by Collection</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }}>
-                        {displayCollections.map((col) => (
-                            <TouchableOpacity key={col.id} style={{ width: 150, marginRight: 12 }}>
-                                <View style={{ width: 150, height: 180, borderRadius: 14, overflow: 'hidden', marginBottom: 8 }}>
-                                    <Image source={{ uri: col.image_url || col.image || 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                                    <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{col.name}</Text>
-                                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>{col.count || 0} items</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* Member Banner */}
-                <TouchableOpacity style={{ marginHorizontal: 18, marginBottom: 25, height: 130, backgroundColor: '#111', borderRadius: 18, flexDirection: 'row', overflow: 'hidden' }}>
-                    <View style={{ flex: 1, padding: 18, justifyContent: 'center' }}>
-                        <Text style={{ color: '#888', fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>MEMBER EXCLUSIVE</Text>
-                        <Text style={{ color: 'white', fontSize: 20, fontWeight: '900', marginBottom: 8 }}>GET 20% OFF</Text>
-                        <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Join Free →</Text>
-                    </View>
-                    <View style={{ width: 110, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 40 }}>🎁</Text>
-                    </View>
-                </TouchableOpacity>
-
-                {/* Best Sellers */}
-                <View style={{ paddingVertical: 20 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingHorizontal: 18 }}>
-                        <Text style={{ fontSize: 17, fontWeight: '700' }}>Best Sellers</Text>
-                        <TouchableOpacity><Text style={{ color: '#666', fontWeight: '600', fontSize: 13 }}>See All</Text></TouchableOpacity>
-                    </View>
-                    <FlatList data={products.slice(0, 8)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_best'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
-                </View>
-
-                {/* Footer */}
                 {/* Footer */}
                 <View style={{ paddingVertical: 35, paddingHorizontal: 20, backgroundColor: '#0a0a0a', marginTop: 20, alignItems: 'center' }}>
                     <Text style={{ fontSize: 24, fontWeight: '900', letterSpacing: 5, color: 'white', marginBottom: 5 }}>MATOSHREE</Text>

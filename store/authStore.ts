@@ -10,6 +10,12 @@ interface User {
     phone?: string;
     role?: 'retail' | 'wholesale';
     is_verified?: boolean;
+    // B2B Fields
+    business_name?: string;
+    gst_number?: string;
+    shop_address?: string; // Verified manually added
+    credit_limit?: number;
+    credit_balance?: number;
 }
 
 interface AuthState {
@@ -47,7 +53,12 @@ export const useAuthStore = create<AuthState>()(
                             email: data.user.email || '',
                             full_name: profile?.full_name || data.user.user_metadata?.full_name,
                             role: profile?.role || 'retail',
-                            is_verified: profile?.is_verified ?? false
+                            is_verified: profile?.is_verified ?? false,
+                            business_name: profile?.business_name,
+                            gst_number: profile?.gst_number,
+                            shop_address: profile?.shop_address,
+                            credit_limit: profile?.credit_limit,
+                            credit_balance: profile?.credit_balance
                         },
                         isAuthenticated: true,
                         isLoading: false
@@ -57,10 +68,6 @@ export const useAuthStore = create<AuthState>()(
             },
 
             signUp: async (email, password, fullName) => {
-                // SignUp is handled by component, but this updates store if auto-login succeeds
-                // Note: The UI component calls this, but usually calls supabase.auth.signUp directly for custom metadata
-                // We'll keep this simple or unused if the UI does it manually.
-                // But for store completeness:
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -69,14 +76,13 @@ export const useAuthStore = create<AuthState>()(
                 if (error) return { error: error.message };
 
                 if (data.user) {
-                    // Initial signup - profile might be creating via trigger. Use metadata fallback.
                     set({
                         user: {
                             id: data.user.id,
                             email: data.user.email || '',
                             full_name: fullName,
-                            role: 'retail', // Default
-                            is_verified: true // Retail default
+                            role: 'retail',
+                            is_verified: true
                         },
                         isAuthenticated: true,
                         isLoading: false
@@ -94,7 +100,6 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true });
                 const { data } = await supabase.auth.getSession();
                 if (data.session?.user) {
-                    // Fetch fresh profile data on session check
                     const { data: profile } = await supabase
                         .from('profiles')
                         .select('*')
@@ -107,7 +112,12 @@ export const useAuthStore = create<AuthState>()(
                             email: data.session.user.email || '',
                             full_name: profile?.full_name || data.session.user.user_metadata?.full_name,
                             role: profile?.role || 'retail',
-                            is_verified: profile?.is_verified ?? false
+                            is_verified: profile?.is_verified ?? false,
+                            business_name: profile?.business_name,
+                            gst_number: profile?.gst_number,
+                            shop_address: profile?.shop_address,
+                            credit_limit: profile?.credit_limit,
+                            credit_balance: profile?.credit_balance
                         },
                         isAuthenticated: true,
                         isLoading: false

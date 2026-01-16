@@ -41,17 +41,24 @@ export default function Profile() {
         );
     };
 
-    const menuItems = [
+    const baseMenuItems = [
         { icon: Package, label: 'My Orders', route: '/my-orders', requiresAuth: true },
         { icon: MapPin, label: 'Saved Addresses', route: '/addresses', requiresAuth: true },
         { icon: Heart, label: 'Wishlist', route: '/wishlist', requiresAuth: true },
-        { icon: CreditCard, label: 'Payment Methods', route: '/payments', requiresAuth: true },
-        { icon: Bell, label: 'Notifications', route: '/notifications', requiresAuth: false },
+    ];
+
+    const b2bMenuItems = user?.role === 'wholesale' ? [
+        { icon: CreditCard, label: 'My Quotations', route: '/b2b/quotations', requiresAuth: true },
+    ] : [];
+
+    const otherMenuItems = [
         { icon: HelpCircle, label: 'Help & Support', route: '/help', requiresAuth: false },
         { icon: Settings, label: 'Settings', route: '/settings', requiresAuth: false },
     ];
 
-    const handleMenuPress = (item: typeof menuItems[0]) => {
+    const menuItems = [...baseMenuItems, ...b2bMenuItems, ...otherMenuItems];
+
+    const handleMenuPress = (item: any) => {
         if (item.requiresAuth && !user) {
             Alert.alert('Sign In Required', 'Please sign in to access this feature', [
                 { text: 'Cancel', style: 'cancel' },
@@ -122,6 +129,60 @@ export default function Profile() {
                         </>
                     )}
                 </View>
+
+                {/* Validated Business Profile (B2B Only) */}
+                {user?.role === 'wholesale' && user?.is_verified && (
+                    <View style={{ marginHorizontal: 20, marginTop: 20, padding: 20, backgroundColor: '#0f172a', borderRadius: 15 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Business Profile</Text>
+                            <View style={{ backgroundColor: '#0ea5e9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                                <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>VERIFIED B2B</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ marginBottom: 12 }}>
+                            <Text style={{ color: '#94a3b8', fontSize: 12, marginBottom: 2 }}>BUSINESS NAME</Text>
+                            <Text style={{ color: 'white', fontSize: 18, fontWeight: '600' }}>{user.business_name || 'N/A'}</Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View>
+                                <Text style={{ color: '#94a3b8', fontSize: 12, marginBottom: 2 }}>GSTIN</Text>
+                                <Text style={{ color: 'white', fontSize: 14 }}>{user.gst_number || 'N/A'}</Text>
+                            </View>
+                            <View>
+                                <Text style={{ color: '#94a3b8', fontSize: 12, marginBottom: 2, textAlign: 'right' }}>CREDIT BALANCE</Text>
+                                <Text style={{ color: '#4ade80', fontSize: 16, fontWeight: 'bold', textAlign: 'right' }}>₹{user.credit_balance?.toLocaleString() || '0'}</Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
+
+                {/* Verification Pending Banner */}
+                {user?.role === 'wholesale' && !user?.is_verified && (
+                    <View style={{ margin: 20, padding: 20, backgroundColor: '#fff7ed', borderRadius: 12, borderWidth: 1, borderColor: '#fdba74' }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#c2410c', marginBottom: 5 }}>Verification Pending</Text>
+                        <Text style={{ color: '#9a3412', fontSize: 14 }}>
+                            Your business details are under review. You will be notified once your account is approved for wholesale pricing.
+                        </Text>
+                    </View>
+                )}
+
+                {/* Become a Wholesaler Banner (Retail Only) */}
+                {user && user.role === 'retail' && (
+                    <TouchableOpacity
+                        onPress={() => router.push('/b2b/register')}
+                        style={{ margin: 20, padding: 20, backgroundColor: '#eff6ff', borderRadius: 12, borderWidth: 1, borderColor: '#bfdbfe', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 5 }}>Are you a Wholesaler?</Text>
+                            <Text style={{ color: '#1e40af', fontSize: 13 }}>Register your business to unlock bulk pricing and exclusive catalogs.</Text>
+                        </View>
+                        <View style={{ width: 40, height: 40, backgroundColor: '#dbeafe', borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}>
+                            <ChevronRight size={24} color="#1e40af" />
+                        </View>
+                    </TouchableOpacity>
+                )}
 
                 {/* Menu Items */}
                 <View style={{ padding: 20 }}>

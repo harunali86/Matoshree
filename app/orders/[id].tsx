@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator, Dimensions, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -24,9 +24,43 @@ export default function OrderDetails() {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
+
+    // Cancellation State
     const [cancelModalVisible, setCancelModalVisible] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
     const [cancelling, setCancelling] = useState(false);
+    const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+    const [cancelComment, setCancelComment] = useState('');
+
+    // Return State
+    const [returnModalVisible, setReturnModalVisible] = useState(false);
+    const [returnReason, setReturnReason] = useState('');
+    const [returning, setReturning] = useState(false);
+
+    const submitReturnRequest = async () => {
+        if (!returnReason) {
+            Alert.alert('Error', 'Please select a reason for return');
+            return;
+        }
+        setReturning(true);
+        try {
+            const { error } = await supabase.from('returns').insert({
+                user_id: order.user_id,
+                order_id: order.id,
+                reason: returnReason,
+                status: 'requested'
+            });
+            if (error) throw error;
+
+            Alert.alert('Success', 'Return request submitted successfully.');
+            setReturnModalVisible(false);
+            fetchOrderDetails();
+        } catch (e: any) {
+            Alert.alert('Error', e.message);
+        } finally {
+            setReturning(false);
+        }
+    };
 
     useEffect(() => {
         fetchOrderDetails();
@@ -59,7 +93,17 @@ export default function OrderDetails() {
         }
     };
 
+    const toggleItemSelection = (itemId: string) => {
+        setSelectedItemIds(prev =>
+            prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+        );
+    };
+
     const submitCancellation = async () => {
+        if (selectedItemIds.length === 0) {
+            Alert.alert('Error', 'Please select at least one item to cancel');
+            return;
+        }
         if (!cancelReason.trim()) {
             Alert.alert('Error', 'Please provide a reason for cancellation');
             return;
@@ -67,15 +111,31 @@ export default function OrderDetails() {
 
         setCancelling(true);
         try {
-            const { data, error } = await supabase.rpc('cancel_order', {
-                p_order_id: id,
-                p_reason: cancelReason
-            });
+            const isFullCancellation = selectedItemIds.length === order.order_items.length;
+            const description = `${cancelReason} - ${cancelComment}`;
 
-            if (error) throw error;
-            if (data && !data.success) throw new Error(data.error);
+            if (isFullCancellation) {
+                // Full Cancellation Logic
+                const { data, error } = await supabase.rpc('cancel_order', {
+                    p_order_id: id,
+                    p_reason: description
+                });
 
-            Alert.alert('Order Cancelled', 'Your order has been cancelled successfully.');
+                if (error) throw error;
+                if (data && !data.success) throw new Error(data.error);
+                Alert.alert('Order Cancelled', 'Your order has been cancelled successfully.');
+            } else {
+                // Partial Cancellation (Simulated via Notes)
+                const selectedNames = order.order_items.filter((i: any) => selectedItemIds.includes(i.id)).map((i: any) => i.product.name).join(', ');
+
+                const { error } = await supabase.from('orders').update({
+                    notes: `Partial Cancellation Request for: ${selectedNames}. Reason: ${description}`,
+                }).eq('id', id);
+
+                if (error) throw error;
+                Alert.alert('Request Submitted', 'Your cancellation request for selected items has been received and is being processed.');
+            }
+
             setCancelModalVisible(false);
             fetchOrderDetails();
         } catch (e: any) {
@@ -88,7 +148,6 @@ export default function OrderDetails() {
     const generateInvoice = async () => {
         setDownloading(true);
         try {
-            // Check formatted address from JSON
             const addr = order.shipping_address || {};
 
             const htmlContent = `
@@ -307,38 +366,157 @@ export default function OrderDetails() {
                             <Text style={{ fontWeight: '600', marginLeft: 10, color: '#d32f2f' }}>Cancel Order</Text>
                         </TouchableOpacity>
                     )}
+
+                    {order.status === 'Delivered' && !order.return_status && (
+                        <TouchableOpacity
+                            onPress={() => setReturnModalVisible(true)}
+                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'black', padding: 15, borderRadius: 12 }}
+                        >
+                            <Package size={20} color="white" />
+                            <Text style={{ fontWeight: '600', marginLeft: 10, color: 'white' }}>Return / Exchange</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {order.return_status && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f9ff', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#bae6fd' }}>
+                            <Text style={{ fontWeight: '600', color: '#0284c7' }}>Return Status: {order.return_status.toUpperCase()}</Text>
+                        </View>
+                    )}
                 </View>
 
             </ScrollView>
 
             {/* Cancel Modal */}
             {cancelModalVisible && (
-                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                    <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 20, width: '100%' }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 15 }}>Cancel Order</Text>
-                        <Text style={{ color: '#666', marginBottom: 15, fontSize: 14 }}>Please choose a reason for cancellation:</Text>
+                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 24, width: '100%', maxHeight: '80%' }}>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 20 }}>Cancel Order</Text>
 
-                        {['Found better price', 'Ordered by mistake', 'Delivery is too late', 'Other'].map(r => (
-                            <TouchableOpacity key={r} onPress={() => setCancelReason(r)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
-                                <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: cancelReason === r ? 'black' : '#ccc', marginRight: 10, justifyContent: 'center', alignItems: 'center' }}>
-                                    {cancelReason === r && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: 'black' }} />}
-                                </View>
-                                <Text>{r}</Text>
-                            </TouchableOpacity>
-                        ))}
+                            {/* Step 1: Select Items */}
+                            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>1. Select Items to Cancel</Text>
+                            <View style={{ marginBottom: 20 }}>
+                                {order.order_items.map((item: any) => {
+                                    const isSelected = selectedItemIds.includes(item.id);
+                                    return (
+                                        <TouchableOpacity
+                                            key={item.id}
+                                            onPress={() => toggleItemSelection(item.id)}
+                                            style={{
+                                                flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 8,
+                                                backgroundColor: isSelected ? '#f5f5f5' : 'white',
+                                                borderWidth: 1, borderColor: isSelected ? 'black' : '#eee', borderRadius: 10
+                                            }}
+                                        >
+                                            <View style={{
+                                                width: 22, height: 22, borderRadius: 6, borderWidth: 2,
+                                                borderColor: isSelected ? 'black' : '#ccc',
+                                                justifyContent: 'center', alignItems: 'center', marginRight: 12,
+                                                backgroundColor: isSelected ? 'black' : 'transparent'
+                                            }}>
+                                                {isSelected && <CheckCircle2 size={14} color="white" />}
+                                            </View>
+                                            <Image source={{ uri: item.product.thumbnail || undefined }} style={{ width: 40, height: 40, borderRadius: 6, marginRight: 12 }} />
+                                            <View style={{ flex: 1 }}>
+                                                <Text numberOfLines={1} style={{ fontWeight: '600', fontSize: 14 }}>{item.product.name}</Text>
+                                                <Text style={{ fontSize: 12, color: '#666' }}>Size: {item.size}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 20, gap: 10 }}>
-                            <TouchableOpacity onPress={() => setCancelModalVisible(false)} style={{ padding: 10 }}>
-                                <Text style={{ color: '#666' }}>Close</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={submitCancellation}
-                                disabled={cancelling}
-                                style={{ backgroundColor: '#d32f2f', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
-                            >
-                                {cancelling ? <ActivityIndicator color="white" size="small" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel Order</Text>}
-                            </TouchableOpacity>
-                        </View>
+                            {/* Step 2: Reason */}
+                            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>2. Reason for Cancellation</Text>
+                            <View style={{ marginBottom: 20 }}>
+                                {['Found better price', 'Ordered by mistake', 'Delivery is too late', 'Other'].map(r => (
+                                    <TouchableOpacity key={r} onPress={() => setCancelReason(r)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, marginBottom: 4 }}>
+                                        <View style={{
+                                            width: 20, height: 20, borderRadius: 10, borderWidth: 2,
+                                            borderColor: cancelReason === r ? 'black' : '#ccc',
+                                            marginRight: 10, justifyContent: 'center', alignItems: 'center'
+                                        }}>
+                                            {cancelReason === r && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: 'black' }} />}
+                                        </View>
+                                        <Text style={{ fontSize: 15, color: '#333' }}>{r}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Step 3: Comments */}
+                            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>3. Additional Comments</Text>
+                            <TextInput
+                                style={{
+                                    borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 12,
+                                    height: 100, textAlignVertical: 'top', backgroundColor: '#f9f9f9', fontSize: 15
+                                }}
+                                placeholder="Describe your issue here..."
+                                multiline
+                                value={cancelComment}
+                                onChangeText={setCancelComment}
+                            />
+
+                            {/* Actions */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 30, gap: 12 }}>
+                                <TouchableOpacity onPress={() => setCancelModalVisible(false)} style={{ paddingVertical: 12, paddingHorizontal: 20 }}>
+                                    <Text style={{ fontWeight: '600', color: '#666' }}>Close</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={submitCancellation}
+                                    disabled={cancelling}
+                                    style={{
+                                        backgroundColor: '#d32f2f', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 30,
+                                        elevation: 2
+                                    }}
+                                >
+                                    {cancelling ? <ActivityIndicator color="white" size="small" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Confirm Cancellation</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            )}
+
+            {/* Return Modal */}
+            {returnModalVisible && (
+                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 24, width: '100%', maxHeight: '80%' }}>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 20 }}>Return / Exchange</Text>
+                            <Text style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>If you are not satisfied with the product, you can request a return or exchange within 7 days.</Text>
+
+                            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>Reason for Return</Text>
+                            <View style={{ marginBottom: 20 }}>
+                                {['Size issue', 'Damaged product', 'Wrong item received', 'Quality issue', 'Other'].map(r => (
+                                    <TouchableOpacity key={r} onPress={() => setReturnReason(r)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, marginBottom: 4, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' }}>
+                                        <View style={{
+                                            width: 20, height: 20, borderRadius: 10, borderWidth: 2,
+                                            borderColor: returnReason === r ? 'black' : '#ccc',
+                                            marginRight: 10, justifyContent: 'center', alignItems: 'center'
+                                        }}>
+                                            {returnReason === r && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: 'black' }} />}
+                                        </View>
+                                        <Text style={{ fontSize: 15, color: '#333' }}>{r}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, gap: 12 }}>
+                                <TouchableOpacity onPress={() => setReturnModalVisible(false)} style={{ paddingVertical: 12, paddingHorizontal: 20 }}>
+                                    <Text style={{ fontWeight: '600', color: '#666' }}>Close</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={submitReturnRequest}
+                                    disabled={returning}
+                                    style={{
+                                        backgroundColor: 'black', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 30,
+                                        elevation: 2
+                                    }}
+                                >
+                                    {returning ? <ActivityIndicator color="white" size="small" /> : <Text style={{ color: 'white', fontWeight: 'bold' }}>Submit Request</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
                     </View>
                 </View>
             )}

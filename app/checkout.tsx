@@ -207,31 +207,46 @@ export default function Checkout() {
                     ) : (
                         <>
                             {addresses.map(addr => (
-                                <TouchableOpacity
+                                <View
                                     key={addr.id}
-                                    onPress={() => setSelectedAddress(addr)}
                                     style={{
-                                        padding: 15,
-                                        borderWidth: selectedAddress?.id === addr.id ? 2 : 1,
-                                        borderColor: selectedAddress?.id === addr.id ? 'black' : '#eee',
-                                        borderRadius: 10,
                                         marginBottom: 10,
-                                        flexDirection: 'row',
-                                        alignItems: 'center'
+                                        borderRadius: 10,
+                                        overflow: 'hidden'
                                     }}
                                 >
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontWeight: 'bold' }}>{addr.name}</Text>
-                                        <Text style={{ color: '#666', marginTop: 3 }}>{addr.address_line}</Text>
-                                        <Text style={{ color: '#666' }}>{addr.city}, {addr.state} - {addr.pincode}</Text>
-                                        <Text style={{ color: '#666', marginTop: 3 }}>📞 {addr.phone}</Text>
-                                    </View>
-                                    {selectedAddress?.id === addr.id && (
-                                        <View style={{ width: 24, height: 24, backgroundColor: 'black', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
-                                            <Check size={14} color="white" />
+                                    <TouchableOpacity
+                                        onPress={() => setSelectedAddress(addr)}
+                                        style={{
+                                            padding: 15,
+                                            borderWidth: selectedAddress?.id === addr.id ? 2 : 1,
+                                            borderColor: selectedAddress?.id === addr.id ? 'black' : '#eee',
+                                            borderRadius: 10,
+                                            flexDirection: 'row',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <View style={{ flex: 1 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{addr.name}</Text>
+                                                <TouchableOpacity
+                                                    onPress={() => router.push(`/add-address?id=${addr.id}` as any)}
+                                                    style={{ padding: 5, marginRight: 5 }}
+                                                >
+                                                    <Text style={{ color: '#666', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' }}>EDIT</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                            <Text style={{ color: '#666', marginTop: 0 }}>{addr.address_line}</Text>
+                                            <Text style={{ color: '#666' }}>{addr.city}, {addr.state} - {addr.pincode}</Text>
+                                            <Text style={{ color: '#666', marginTop: 3 }}>📞 {addr.phone}</Text>
                                         </View>
-                                    )}
-                                </TouchableOpacity>
+                                        {selectedAddress?.id === addr.id && (
+                                            <View style={{ width: 24, height: 24, backgroundColor: 'black', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginLeft: 10 }}>
+                                                <Check size={14} color="white" />
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
                             ))}
                         </>
                     )}
@@ -315,12 +330,28 @@ export default function Checkout() {
                 <View style={{ backgroundColor: 'white', margin: 15, marginTop: 0, borderRadius: 12, padding: 15 }}>
                     <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 15 }}>Order Summary</Text>
 
-                    {items.map((item, i) => (
-                        <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-                            <Text style={{ color: '#666', flex: 1 }} numberOfLines={1}>{item.name} (x{item.quantity})</Text>
-                            <Text style={{ fontWeight: '500' }}>₹{item.price * item.quantity}</Text>
-                        </View>
-                    ))}
+                    {items.map((item, i) => {
+                        // Calculate effective price for display consistency
+                        let displayPrice = item.price;
+                        if (item.price_wholesale) displayPrice = item.price_wholesale;
+                        else if (item.price_tiers && item.price_tiers.length > 0) {
+                            const tier = item.price_tiers.find((t: any) => item.quantity >= t.min_quantity && (!t.max_quantity || item.quantity <= t.max_quantity));
+                            if (tier) displayPrice = tier.unit_price;
+                        } else if (item.sale_price) displayPrice = item.sale_price;
+
+                        return (
+                            <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f9f9f9', paddingBottom: 8 }}>
+                                <View style={{ flex: 1, paddingRight: 10 }}>
+                                    <Text style={{ fontWeight: '600', fontSize: 14, color: '#333' }} numberOfLines={1}>{item.name}</Text>
+                                    <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Size: {item.size}  •  Qty: {item.quantity}</Text>
+                                </View>
+                                <View style={{ alignItems: 'flex-end' }}>
+                                    <Text style={{ fontWeight: 'bold', fontSize: 15 }}>₹{(displayPrice * item.quantity).toLocaleString()}</Text>
+                                    <Text style={{ fontSize: 11, color: '#999' }}>₹{displayPrice.toLocaleString()}/ea</Text>
+                                </View>
+                            </View>
+                        );
+                    })}
 
                     <View style={{ borderTopWidth: 1, borderColor: '#eee', paddingTop: 10, marginTop: 10 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
