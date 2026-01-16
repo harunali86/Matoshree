@@ -389,6 +389,18 @@ export default function Home() {
                 </View>
             </View>
 
+            {/* Full-Screen Loading Overlay */}
+            {loading && (
+                <View style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'white',
+                    justifyContent: 'center', alignItems: 'center', zIndex: 200
+                }}>
+                    <Text style={{ fontSize: 28, fontWeight: '900', letterSpacing: 4, color: '#111', marginBottom: 20 }}>MATOSHREE</Text>
+                    <ActivityIndicator size="large" color="black" />
+                </View>
+            )}
+
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
                 {layout.map((section, index) => {
                     if (!section.visible) return null;
@@ -396,23 +408,25 @@ export default function Home() {
                     return Renderer ? <View key={index}>{Renderer()}</View> : null;
                 })}
 
-                {/* Footer */}
-                <View style={{ paddingVertical: 35, paddingHorizontal: 20, backgroundColor: '#0a0a0a', marginTop: 20, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 24, fontWeight: '900', letterSpacing: 5, color: 'white', marginBottom: 5 }}>MATOSHREE</Text>
-                    <Text style={{ color: '#666', fontSize: 10, letterSpacing: 2, marginBottom: 25, textTransform: 'uppercase' }}>Est. 1999 • Premium Footwear</Text>
+                {/* Footer - Only show when not loading */}
+                {!loading && (
+                    <View style={{ paddingVertical: 35, paddingHorizontal: 20, backgroundColor: '#0a0a0a', marginTop: 20, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 24, fontWeight: '900', letterSpacing: 5, color: 'white', marginBottom: 5 }}>MATOSHREE</Text>
+                        <Text style={{ color: '#666', fontSize: 10, letterSpacing: 2, marginBottom: 25, textTransform: 'uppercase' }}>Est. 1999 • Premium Footwear</Text>
 
-                    <View style={{ width: 40, height: 1, backgroundColor: '#333', marginBottom: 25 }} />
+                        <View style={{ width: 40, height: 1, backgroundColor: '#333', marginBottom: 25 }} />
 
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 15, columnGap: 25, marginBottom: 30 }}>
-                        <TouchableOpacity onPress={() => router.push('/about')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>About Us</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/contact')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Contact</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/privacy')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Privacy Policy</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/terms')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Terms used</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/help')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Help Center</Text></TouchableOpacity>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 15, columnGap: 25, marginBottom: 30 }}>
+                            <TouchableOpacity onPress={() => router.push('/about')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>About Us</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => router.push('/contact')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Contact</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => router.push('/privacy')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Privacy Policy</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => router.push('/terms')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Terms</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => router.push('/help')}><Text style={{ color: '#ccc', fontSize: 12, fontWeight: '500' }}>Help Center</Text></TouchableOpacity>
+                        </View>
+
+                        <Text style={{ color: '#333', fontSize: 9, letterSpacing: 1 }}>© 2026 MATOSHREE. INC. ALL RIGHTS RESERVED.</Text>
                     </View>
-
-                    <Text style={{ color: '#333', fontSize: 9, letterSpacing: 1 }}>© 2026 MATOSHREE. INC. ALL RIGHTS RESERVED.</Text>
-                </View>
+                )}
             </ScrollView>
         </View>
     );
