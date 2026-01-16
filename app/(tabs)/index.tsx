@@ -157,7 +157,7 @@ export default function Home() {
             }
 
         } catch (error) {
-            console.log('Fetch error:', error);
+            // console.error('Fetch error:', error);
         } finally {
             setLoading(false);
         }
@@ -211,6 +211,11 @@ export default function Home() {
     const isWholesaleUser = user?.role === 'wholesale' && user?.is_verified;
 
 
+
+
+    const renderProductItem = React.useCallback(({ item }: { item: Product }) => (
+        <MemoizedProductCard item={item} isWholesaleUser={!!isWholesaleUser} router={router} />
+    ), [isWholesaleUser, router]);
 
     const renderCategory = ({ item }: { item: Category }) => {
         const catImage = CATEGORY_IMAGES[item.name.toLowerCase()] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200';
@@ -325,7 +330,7 @@ export default function Home() {
                 {loading ? <ActivityIndicator size="large" color="black" style={{ marginVertical: 30 }} /> : (
                     <FlatList
                         data={products.filter(p => p.is_new_arrival).length > 0 ? products.filter(p => p.is_new_arrival) : products.slice(0, 6)}
-                        renderItem={({ item }) => <MemoizedProductCard item={item} isWholesaleUser={!!isWholesaleUser} router={router} />}
+                        renderItem={renderProductItem}
                         keyExtractor={(item) => item.id + '_new'}
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -376,7 +381,7 @@ export default function Home() {
                 </View>
                 <FlatList
                     data={products.slice(0, 8)}
-                    renderItem={({ item }) => <MemoizedProductCard item={item} isWholesaleUser={!!isWholesaleUser} router={router} />}
+                    renderItem={renderProductItem}
                     keyExtractor={(item) => item.id + '_best'}
                     horizontal
                     showsHorizontalScrollIndicator={false}

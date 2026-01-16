@@ -40,7 +40,7 @@ export default function Help() {
                 });
             }
         } catch (e) {
-            console.log('Using default settings');
+
         } finally {
             setLoading(false);
         }

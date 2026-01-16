@@ -37,7 +37,7 @@ export default function Contact() {
                 setSettings({ ...DEFAULT_SETTINGS, ...data.store });
             }
         } catch (e) {
-            console.log('Using default settings');
+
         } finally {
             setLoading(false);
         }
