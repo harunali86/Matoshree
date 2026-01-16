@@ -59,19 +59,19 @@ export default function Home() {
     const fetchData = async () => {
         try {
             const [productsRes, bannersRes, categoriesRes, saleRes, brandsRes, collectionsRes, layoutRes] = await Promise.all([
-                supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(20),
+                supabase.from('products').select('id, name, price, sale_price, thumbnail, images, category(name), is_on_sale, is_new_arrival, price_wholesale, moq').eq('is_active', true).order('created_at', { ascending: false }).limit(20),
                 supabase.from('hero_slides').select('*').eq('is_active', true).order('display_order'),
                 supabase.from('categories').select('*').eq('is_active', true).order('display_order'),
-                supabase.from('products').select('*').eq('is_on_sale', true).eq('is_active', true).limit(10),
+                supabase.from('products').select('id, name, price, sale_price, thumbnail, images, category(name), is_on_sale, is_new_arrival, price_wholesale, moq').eq('is_on_sale', true).eq('is_active', true).limit(10),
                 supabase.from('brands').select('*').order('name'),
                 supabase.from('collections').select('*').eq('is_active', true).order('name'),
                 supabase.from('app_config').select('value').eq('key', 'home_layout').single()
             ]);
 
-            if (productsRes.data) setProducts(productsRes.data);
+            if (productsRes.data) setProducts(productsRes.data as any);
             if (bannersRes.data) setBanners(bannersRes.data);
             if (categoriesRes.data) setCategories(categoriesRes.data);
-            if (saleRes.data) setSaleProducts(saleRes.data);
+            if (saleRes.data) setSaleProducts(saleRes.data as any);
             if (brandsRes.data) setBrands(brandsRes.data);
             if (collectionsRes.data) setCollections(collectionsRes.data);
 
