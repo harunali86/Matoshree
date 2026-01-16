@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Image as RNImage, TouchableOpacity, Dimensions, FlatList, ActivityIndicator, StatusBar } from 'react-native';
+import React from 'react';
 import { Image } from 'expo-image';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
@@ -10,6 +11,64 @@ import { useAuthStore } from '../../store/authStore';
 import { useRecentlyViewedStore } from '../../store/recentlyViewedStore';
 
 const { width, height } = Dimensions.get('window');
+
+const MemoizedProductCard = React.memo(({ item, isWholesaleUser, router }: { item: Product, isWholesaleUser: boolean, router: any }) => {
+    const displayPrice = isWholesaleUser && item.price_wholesale ? item.price_wholesale : (item.sale_price || item.price);
+    const showSaleTag = !isWholesaleUser && item.is_on_sale;
+
+    const getProductImage = (product: Product) => {
+        if (product.thumbnail && product.thumbnail.startsWith('http')) return product.thumbnail;
+        if (product.images && product.images.length > 0 && product.images[0].startsWith('http')) return product.images[0];
+        const randomId = product.id.charCodeAt(0) % 5;
+        const placeholders = [
+            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
+            'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400',
+            'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=400',
+            'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400',
+            'https://images.unsplash.com/photo-1555274175-75f79b09d5b8?w=400'
+        ];
+        return placeholders[randomId] || placeholders[0];
+    };
+
+    return (
+        <TouchableOpacity onPress={() => router.push(`/product/${item.id}`)} style={{ width: 155, marginRight: 12 }}>
+            <View style={{ width: 155, height: 175, backgroundColor: '#f5f5f5', borderRadius: 14, overflow: 'hidden', marginBottom: 10 }}>
+                <Image
+                    source={{ uri: getProductImage(item) }}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                    transition={500}
+                />
+                {showSaleTag && (
+                    <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#ff3b30', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
+                        <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>SALE</Text>
+                    </View>
+                )}
+                {isWholesaleUser && (
+                    <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#0284c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
+                        <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>B2B</Text>
+                    </View>
+                )}
+                <TouchableOpacity style={{ position: 'absolute', top: 8, right: 8, width: 30, height: 30, backgroundColor: 'white', borderRadius: 15, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5 }}>
+                    <Heart size={14} color="#333" />
+                </TouchableOpacity>
+            </View>
+            <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 3, color: '#111' }} numberOfLines={1}>{item.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{displayPrice?.toLocaleString()}</Text>
+                {!isWholesaleUser && item.is_on_sale && item.sale_price && (
+                    <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
+                )}
+                {isWholesaleUser && (
+                    <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>/ pair</Text>
+                )}
+            </View>
+            {isWholesaleUser && item.moq && item.moq > 1 && (
+                <Text style={{ color: '#666', fontSize: 10 }}>Min: {item.moq} pairs</Text>
+            )}
+        </TouchableOpacity>
+    );
+});
 
 // Real Brand Logos (CDN URLs that work) - Fallback
 const defaultBrands: Brand[] = [
@@ -128,19 +187,7 @@ export default function Home() {
         return () => clearInterval(timer);
     }, [activeSlide, displayBanners.length]);
 
-    const getProductImage = (product: Product) => {
-        if (product.thumbnail && product.thumbnail.startsWith('http')) return product.thumbnail;
-        if (product.images && product.images.length > 0 && product.images[0].startsWith('http')) return product.images[0];
-        const randomId = product.id.charCodeAt(0) % 5;
-        const placeholders = [
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
-            'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400',
-            'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=400',
-            'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400',
-            'https://images.unsplash.com/photo-1555274175-75f79b09d5b8?w=400'
-        ];
-        return placeholders[randomId] || placeholders[0];
-    };
+
 
     const renderHeroBanner = ({ item }: { item: Banner }) => (
         <View style={{ width, height: height * 0.48 }}>
@@ -163,49 +210,7 @@ export default function Home() {
     const { user } = useAuthStore();
     const isWholesaleUser = user?.role === 'wholesale' && user?.is_verified;
 
-    const renderProductCard = ({ item }: { item: Product }) => {
-        const displayPrice = isWholesaleUser && item.price_wholesale ? item.price_wholesale : (item.sale_price || item.price);
-        const showSaleTag = !isWholesaleUser && item.is_on_sale;
 
-        return (
-            <TouchableOpacity onPress={() => router.push(`/product/${item.id}`)} style={{ width: 155, marginRight: 12 }}>
-                <View style={{ width: 155, height: 175, backgroundColor: '#f5f5f5', borderRadius: 14, overflow: 'hidden', marginBottom: 10 }}>
-                    <Image
-                        source={{ uri: getProductImage(item) }}
-                        style={{ width: '100%', height: '100%' }}
-                        contentFit="cover"
-                        transition={500}
-                    />
-                    {showSaleTag && (
-                        <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#ff3b30', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
-                            <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>SALE</Text>
-                        </View>
-                    )}
-                    {isWholesaleUser && (
-                        <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#0284c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
-                            <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>B2B</Text>
-                        </View>
-                    )}
-                    <TouchableOpacity style={{ position: 'absolute', top: 8, right: 8, width: 30, height: 30, backgroundColor: 'white', borderRadius: 15, justifyContent: 'center', alignItems: 'center' }}>
-                        <Heart size={14} color="#333" />
-                    </TouchableOpacity>
-                </View>
-                <Text style={{ fontWeight: '600', fontSize: 13, marginBottom: 3 }} numberOfLines={1}>{item.name}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontWeight: 'bold', fontSize: 14 }}>₹{displayPrice?.toLocaleString()}</Text>
-                    {!isWholesaleUser && item.is_on_sale && item.sale_price && (
-                        <Text style={{ color: '#999', fontSize: 11, textDecorationLine: 'line-through' }}>₹{item.price}</Text>
-                    )}
-                    {isWholesaleUser && (
-                        <Text style={{ color: '#0284c7', fontSize: 10, fontWeight: 'bold' }}>/ pair</Text>
-                    )}
-                </View>
-                {isWholesaleUser && item.moq && item.moq > 1 && (
-                    <Text style={{ color: '#666', fontSize: 10 }}>Min: {item.moq} pairs</Text>
-                )}
-            </TouchableOpacity>
-        );
-    };
 
     const renderCategory = ({ item }: { item: Category }) => {
         const catImage = CATEGORY_IMAGES[item.name.toLowerCase()] || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200';
@@ -273,7 +278,18 @@ export default function Home() {
                         <Text style={{ color: '#666', fontSize: 12 }}>Ends in 23:45:12</Text>
                     </View>
                 </View>
-                <FlatList data={saleProducts} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_sale'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
+                <FlatList
+                    data={saleProducts}
+                    renderItem={({ item }) => <MemoizedProductCard item={item} isWholesaleUser={!!isWholesaleUser} router={router} />}
+                    keyExtractor={(item) => item.id + '_sale'}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 18 }}
+                    initialNumToRender={4}
+                    maxToRenderPerBatch={4}
+                    windowSize={3}
+                    removeClippedSubviews={true}
+                />
             </View>
         ) : null,
         'brands': () => (
@@ -306,7 +322,20 @@ export default function Home() {
                         <ChevronRight size={16} color="#666" />
                     </TouchableOpacity>
                 </View>
-                {loading ? <ActivityIndicator size="large" color="black" style={{ marginVertical: 30 }} /> : <FlatList data={products.filter(p => p.is_new_arrival).length > 0 ? products.filter(p => p.is_new_arrival) : products.slice(0, 6)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_new'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />}
+                {loading ? <ActivityIndicator size="large" color="black" style={{ marginVertical: 30 }} /> : (
+                    <FlatList
+                        data={products.filter(p => p.is_new_arrival).length > 0 ? products.filter(p => p.is_new_arrival) : products.slice(0, 6)}
+                        renderItem={({ item }) => <MemoizedProductCard item={item} isWholesaleUser={!!isWholesaleUser} router={router} />}
+                        keyExtractor={(item) => item.id + '_new'}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: 18 }}
+                        initialNumToRender={4}
+                        maxToRenderPerBatch={4}
+                        windowSize={3}
+                        removeClippedSubviews={true}
+                    />
+                )}
             </View>
         ),
         'collections': () => (
@@ -345,7 +374,18 @@ export default function Home() {
                     <Text style={{ fontSize: 17, fontWeight: '700' }}>Best Sellers</Text>
                     <TouchableOpacity><Text style={{ color: '#666', fontWeight: '600', fontSize: 13 }}>See All</Text></TouchableOpacity>
                 </View>
-                <FlatList data={products.slice(0, 8)} renderItem={renderProductCard} keyExtractor={(item) => item.id + '_best'} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 18 }} />
+                <FlatList
+                    data={products.slice(0, 8)}
+                    renderItem={({ item }) => <MemoizedProductCard item={item} isWholesaleUser={!!isWholesaleUser} router={router} />}
+                    keyExtractor={(item) => item.id + '_best'}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 18 }}
+                    initialNumToRender={4}
+                    maxToRenderPerBatch={4}
+                    windowSize={3}
+                    removeClippedSubviews={true}
+                />
             </View>
         ),
         'recently_viewed': () => {
