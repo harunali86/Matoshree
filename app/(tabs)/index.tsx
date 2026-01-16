@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, Dimensions, FlatList, ActivityIndicator, StatusBar } from 'react-native';
+import { View, Text, ScrollView, Image as RNImage, TouchableOpacity, Dimensions, FlatList, ActivityIndicator, StatusBar } from 'react-native';
+import { Image } from 'expo-image';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Menu, Search, ShoppingBag, Heart, Clock, Zap, TrendingUp, ChevronRight } from 'lucide-react-native';
@@ -143,7 +144,12 @@ export default function Home() {
 
     const renderHeroBanner = ({ item }: { item: Banner }) => (
         <View style={{ width, height: height * 0.48 }}>
-            <Image source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            <Image
+                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800' }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+                transition={500}
+            />
             <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 25, paddingBottom: 40, backgroundColor: 'rgba(0,0,0,0.4)' }}>
                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, letterSpacing: 3, marginBottom: 8 }}>{item.subtitle || 'PREMIUM FOOTWEAR'}</Text>
                 <Text style={{ color: 'white', fontSize: 34, fontWeight: '900', letterSpacing: -1, marginBottom: 18 }}>{item.title || 'DISCOVER STYLE'}</Text>
@@ -164,7 +170,12 @@ export default function Home() {
         return (
             <TouchableOpacity onPress={() => router.push(`/product/${item.id}`)} style={{ width: 155, marginRight: 12 }}>
                 <View style={{ width: 155, height: 175, backgroundColor: '#f5f5f5', borderRadius: 14, overflow: 'hidden', marginBottom: 10 }}>
-                    <Image source={{ uri: getProductImage(item) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    <Image
+                        source={{ uri: getProductImage(item) }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                        transition={500}
+                    />
                     {showSaleTag && (
                         <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#ff3b30', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
                             <Text style={{ color: 'white', fontSize: 9, fontWeight: 'bold' }}>SALE</Text>
@@ -201,7 +212,12 @@ export default function Home() {
         return (
             <TouchableOpacity onPress={() => router.push(`/(tabs)/search?category=${encodeURIComponent(item.name)}`)} style={{ alignItems: 'center', marginRight: 16 }}>
                 <View style={{ width: 70, height: 70, backgroundColor: '#f0f0f0', borderRadius: 35, overflow: 'hidden', marginBottom: 8, borderWidth: 2, borderColor: '#eee' }}>
-                    <Image source={{ uri: catImage }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    <Image
+                        source={{ uri: catImage }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                        transition={500}
+                    />
                 </View>
                 <Text style={{ fontWeight: '600', fontSize: 12, color: '#333' }}>{item.name}</Text>
             </TouchableOpacity>
@@ -216,7 +232,12 @@ export default function Home() {
                 style={{ alignItems: 'center', marginRight: 14 }}
             >
                 <View style={{ width: 70, height: 70, backgroundColor: 'white', borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginBottom: 6, borderWidth: 1.5, borderColor: '#eee', padding: 14 }}>
-                    <Image source={{ uri: logo }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                    <Image
+                        source={{ uri: logo }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="contain"
+                        transition={500}
+                    />
                 </View>
                 <Text style={{ fontWeight: '600', fontSize: 11, color: '#333' }}>{item.name}</Text>
             </TouchableOpacity>
@@ -295,7 +316,7 @@ export default function Home() {
                     {displayCollections.map((col) => (
                         <TouchableOpacity key={col.id} onPress={() => router.push(`/(tabs)/search?collection=${encodeURIComponent(col.name)}`)} style={{ width: 150, marginRight: 12 }}>
                             <View style={{ width: 150, height: 180, borderRadius: 14, overflow: 'hidden', marginBottom: 8 }}>
-                                <Image source={{ uri: col.image_url || col.image || 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                <Image source={{ uri: col.image_url || col.image || 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400' }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={500} />
                                 <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.5)' }}>
                                     <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>{col.name}</Text>
                                     <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>{col.count || 0} items</Text>
@@ -348,6 +369,8 @@ export default function Home() {
                                 <Image
                                     source={{ uri: item.thumbnail || undefined }}
                                     style={{ width: 130, height: 160, borderRadius: 12, backgroundColor: '#f0f0f0', marginBottom: 8 }}
+                                    contentFit="cover"
+                                    transition={500}
                                 />
                                 <Text style={{ fontSize: 13, fontWeight: '600', color: '#111' }} numberOfLines={1}>
                                     {item.name}

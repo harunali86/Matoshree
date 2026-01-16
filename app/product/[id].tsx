@@ -1,4 +1,5 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StatusBar, Dimensions, Animated, FlatList, ActivityIndicator, Easing } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, Dimensions, Animated, FlatList, ActivityIndicator, Easing } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -294,11 +295,11 @@ export default function ProductDetails() {
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActiveImageIndex(Math.round(e.nativeEvent.contentOffset.x / width))}>
                         {currentImages.length > 0 ? (
                             currentImages.map((img: string, index: number) => (
-                                <Image key={index} source={{ uri: img }} style={{ width, height: 400, resizeMode: 'cover' }} />
+                                <Image key={index} source={{ uri: img }} style={{ width, height: 400 }} contentFit="cover" transition={300} />
                             ))
                         ) : (
                             <View style={{ width, height: 400, justifyContent: 'center', alignItems: 'center' }}>
-                                <Image source={{ uri: 'https://via.placeholder.com/400' }} style={{ width, height: 400, resizeMode: 'cover', opacity: 0.5 }} />
+                                <Image source={{ uri: 'https://via.placeholder.com/400' }} style={{ width, height: 400, opacity: 0.5 }} contentFit="cover" transition={300} />
                             </View>
                         )}
                     </ScrollView>

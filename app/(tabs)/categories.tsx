@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -96,9 +97,10 @@ export default function Categories() {
                         >
                             {/* Category Image */}
                             <Image
-                                source={{ uri: getCategoryImage(category) }}
+                                source={{ uri: CATEGORY_IMAGES[category.name] || CATEGORY_IMAGES['default'] }}
                                 style={{ width: '100%', height: 140 }}
-                                resizeMode="cover"
+                                contentFit="cover"
+                                transition={500}
                             />
                             {/* Overlay with Name */}
                             <View style={{
