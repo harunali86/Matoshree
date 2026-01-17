@@ -2,12 +2,10 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface RecentlyViewedProduct {
-    id: string;
-    name: string;
-    price: number;
-    thumbnail?: string;
-    viewedAt?: number; // Made optional since store adds it
+import { Product } from '../types';
+
+interface RecentlyViewedProduct extends Product {
+    viewedAt?: number;
 }
 
 interface RecentlyViewedState {

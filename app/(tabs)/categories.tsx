@@ -14,15 +14,17 @@ interface Category {
 }
 
 // Fallback images for categories (Unsplash - footwear themed)
+// Fallback images for categories (Premium Retail Assets)
 const CATEGORY_IMAGES: { [key: string]: string } = {
-    'Men': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop',
-    'Women': 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&h=400&fit=crop',
-    'Kids': 'https://images.unsplash.com/photo-1514986888952-8cd320577b68?w=400&h=400&fit=crop',
-    'Sports': 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop',
-    'Sneakers': 'https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=400&h=400&fit=crop',
-    'Formal': 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400&h=400&fit=crop',
-    'Sandals': 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400&h=400&fit=crop',
-    'default': 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&h=400&fit=crop'
+    'Men': 'https://images.unsplash.com/photo-1550246140-5119980d0d8f?w=600&q=80',
+    'Women': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&q=80',
+    'Kids': 'https://images.unsplash.com/photo-1519457431-44ccd64a579b?w=600&q=80',
+    'Sports': 'https://images.unsplash.com/photo-1518002171953-a080ee32280d?w=600&q=80',
+    'Sneakers': 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=600&q=80',
+    'Formal': 'https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=600&q=80',
+    'Casual': 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600&q=80',
+    'Sandals': 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=600&q=80',
+    'default': 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&q=80'
 };
 
 export default function Categories() {

@@ -21,6 +21,10 @@ export interface Product {
     is_bestseller: boolean;
     stock: number;
     sku: string | null;
+    category?: { // Joined from category table
+        name: string;
+        slug?: string;
+    } | null;
 }
 
 export interface Banner {

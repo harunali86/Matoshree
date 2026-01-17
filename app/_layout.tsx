@@ -3,23 +3,27 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import * as Notifications from 'expo-notifications';
+// import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 
 // Notification Handler
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-    }),
-});
+// if (Constants.appOwnership !== 'expo') {
+//     Notifications.setNotificationHandler({
+//         handleNotification: async () => ({
+//             shouldShowAlert: true,
+//             shouldPlaySound: true,
+//             shouldSetBadge: false,
+//             shouldShowBanner: true,
+//             shouldShowList: true,
+//         }),
+//     });
+// }
 
 // Helper Function
 async function registerForPushNotificationsAsync() {
+    return null; // DISABLED FOR EXPO GO
+    /*
     if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
             name: 'default',
@@ -54,12 +58,13 @@ async function registerForPushNotificationsAsync() {
     } else {
         console.log('Must use physical device for Push Notifications');
     }
+    */
 }
 
 export default function RootLayout() {
     const { isAuthenticated, checkSession, user } = useAuthStore();
-    const notificationListener = useRef<Notifications.Subscription | null>(null);
-    const responseListener = useRef<Notifications.Subscription | null>(null);
+    const notificationListener = useRef<any | null>(null);
+    const responseListener = useRef<any | null>(null);
 
     // Check session on mount
     useEffect(() => {
@@ -93,6 +98,13 @@ export default function RootLayout() {
 
     // Register for Notifications if logged in
     useEffect(() => {
+        // NOTIFICATIONS DISABLED FOR EXPO GO SDK 53 COMPATIBILITY
+        /*
+        // Expo Go SDK 53 removed Notification support. 
+        // We disable this in dev to prevent crashes.
+        const isExpoGo = Constants.appOwnership === 'expo';
+        if (isExpoGo) return;
+
         if (isAuthenticated && user?.id) {
             registerForPushNotificationsAsync().then((token) => {
                 if (token) {
@@ -127,6 +139,7 @@ export default function RootLayout() {
                 responseListener.current.remove();
             }
         };
+        */
     }, [isAuthenticated, user?.id]);
 
     return (

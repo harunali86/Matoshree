@@ -90,7 +90,7 @@ export default function ProductDetails() {
                 } else {
                     setSelectedColor(COLORS[0]);
                 }
-                useRecentlyViewedStore.getState().addProduct({ id: cached.product.id, name: cached.product.name, price: cached.product.price, thumbnail: cached.product.thumbnail });
+                useRecentlyViewedStore.getState().addProduct(cached.product);
                 setLoading(false);
                 return;
             }
@@ -122,7 +122,7 @@ export default function ProductDetails() {
                         setSelectedColor(COLORS[0]);
                     }
 
-                    useRecentlyViewedStore.getState().addProduct({ id: currentProduct.id, name: currentProduct.name, price: currentProduct.price, thumbnail: currentProduct.thumbnail });
+                    useRecentlyViewedStore.getState().addProduct(currentProduct);
 
                     // Show UI immediately - critical data loaded
                     setLoading(false);
