@@ -1,4 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { useRouter, Stack } from 'expo-router';
@@ -99,7 +100,7 @@ export default function Wishlist() {
                         <View style={{ width: '48%', backgroundColor: '#f9f9f9', borderRadius: 16, marginBottom: 15, overflow: 'hidden' }}>
                             <TouchableOpacity onPress={() => router.push(`/product/${item.product.id}`)}>
                                 <View style={{ aspectRatio: 1, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Image source={{ uri: item.product.thumbnail || undefined }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                    <Image source={{ uri: item.product.thumbnail || undefined }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
                                 </View>
                             </TouchableOpacity>
 

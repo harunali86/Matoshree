@@ -1,4 +1,5 @@
-import { View, Text, TextInput, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search as SearchIcon, X } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
@@ -170,7 +171,9 @@ export default function Search() {
                     <Image
                         source={{ uri: getProductImage(item) }}
                         style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={200}
                     />
                     {showSaleTag && (
                         <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: '#ff3b30', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>

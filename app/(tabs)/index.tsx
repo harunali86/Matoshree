@@ -48,8 +48,9 @@ const MemoizedProductCard = React.memo(({ item, isWholesaleUser, router, variant
                 <Image
                     source={{ uri: getProductImage(item) }}
                     style={{ width: '100%', height: '100%' }}
-                    contentFit="contain" // Show full shoe
+                    contentFit="contain"
                     transition={300}
+                    cachePolicy="memory-disk"
                 />
 
                 {showSaleTag && (
@@ -107,7 +108,7 @@ const renderCategory = ({ item, router }: { item: Category, router: any }) => {
                 marginBottom: 8
             }}>
                 <View style={{ width: '100%', height: '100%', borderRadius: 38, overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
-                    <Image source={{ uri: catImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    <Image source={{ uri: catImage }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
                 </View>
             </View>
             <Text style={{ fontWeight: '600', fontSize: 10, color: '#111', textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.name}</Text>
@@ -132,7 +133,7 @@ const renderBrand = ({ item, router }: { item: Brand, router: any }) => {
             style={{ alignItems: 'center', marginRight: 24 }}
         >
             <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#f9f9f9', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
-                <Image source={{ uri: logo }} style={{ width: 35, height: 35 }} contentFit="contain" />
+                <Image source={{ uri: logo }} style={{ width: 35, height: 35 }} contentFit="contain" cachePolicy="memory-disk" />
             </View>
             <Text style={{ fontWeight: '700', fontSize: 10, color: '#111', letterSpacing: 0.5 }}>{item.name}</Text>
         </TouchableOpacity>

@@ -295,7 +295,7 @@ export default function ProductDetails() {
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActiveImageIndex(Math.round(e.nativeEvent.contentOffset.x / width))}>
                         {currentImages.length > 0 ? (
                             currentImages.map((img: string, index: number) => (
-                                <Image key={index} source={{ uri: img }} style={{ width, height: 400 }} contentFit="cover" transition={300} />
+                                <Image key={index} source={{ uri: img }} style={{ width, height: 400 }} contentFit="cover" transition={300} cachePolicy="memory-disk" />
                             ))
                         ) : (
                             <View style={{ width, height: 400, justifyContent: 'center', alignItems: 'center' }}>
@@ -542,7 +542,7 @@ export default function ProductDetails() {
                                         onPress={() => router.push(`/product/${item.id}`)}
                                         style={{ width: 140, marginRight: 15 }}
                                     >
-                                        <Image source={{ uri: item.thumbnail || undefined }} style={{ width: 140, height: 180, borderRadius: 10, marginBottom: 8 }} />
+                                        <Image source={{ uri: item.thumbnail || undefined }} style={{ width: 140, height: 180, borderRadius: 10, marginBottom: 8 }} contentFit="cover" cachePolicy="memory-disk" />
                                         <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600' }}>{item.name}</Text>
                                         <Text style={{ fontSize: 13, fontWeight: 'bold' }}>₹{item.price}</Text>
                                     </TouchableOpacity>

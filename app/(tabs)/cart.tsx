@@ -1,4 +1,5 @@
-import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cartStore';
 import { useRouter } from 'expo-router';
@@ -46,7 +47,7 @@ export default function Cart() {
                     return (
                         <View style={{ flexDirection: 'row', marginBottom: 20, backgroundColor: 'white' }}>
                             <View style={{ width: 100, height: 100, backgroundColor: '#f9f9f9', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
-                                <Image source={{ uri: item.thumbnail || undefined }} style={{ width: '80%', height: '80%' }} resizeMode="contain" />
+                                <Image source={{ uri: item.thumbnail || undefined }} style={{ width: '80%', height: '80%' }} contentFit="contain" cachePolicy="memory-disk" />
                             </View>
 
                             <View style={{ flex: 1, marginLeft: 15 }}>
